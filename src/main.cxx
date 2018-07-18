@@ -10,7 +10,7 @@ template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
-static std::atomic_size_t Ncalls = 0;
+static std::atomic_size_t Ncalls(0);
 double Rosenbrock(const std::vector<double> &x){
     return 100 * pow(pow(x[0], 2) - x[1], 2) + pow(1 - x[0], 2);
 }
