@@ -12,9 +12,9 @@ CEGO (pronounced sea-go) is C++11 Evolutionary Global Optimization.  It allows f
 
 Try it in your browser: [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/usnistgov/CEGO/master)
 
-Statically rendered examples are provided as Jupyter notebooks served on nbviewer ([link to folder](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks)), roughly sorted in terms of complexity of the example:
+Statically rendered examples are provided as Jupyter notebooks served on nbviewer ([link to folder](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks?flush_cache=true)), roughly sorted in terms of complexity of the example:
 
-* [Hundred-digit challenge](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/HundredDigit.ipynb) (Simple 2D optimization problem)
+* [Hundred-digit challenge](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks/HundredDigit.ipynb) (Simple 2D optimization problem)
 * [Griewangk](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks/Griewangk.ipynb) (10-dimensional double precision optimization)
 * [PressureVesselOptimization](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks/PressureVesselOptimization.ipynb) (MINLP optimization of pressure vessel mass)
 * [SpringOptimization](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks/SpringOptimization.ipynb) (MINLP optimization of spring mass)
