@@ -14,9 +14,11 @@ Try it in your browser: [![Binder](https://mybinder.org/badge.svg)](https://mybi
 
 Statically rendered examples are provided as Jupyter notebooks served on nbviewer ([link to folder](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks)), roughly sorted in terms of complexity of the example:
 
-* [Hundred-digit challenge]()
-* [Griewangk]() (10-dimensional double precision optimization)
-* [Inverse Gaussian bumps]()
+* [Hundred-digit challenge](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/HundredDigit.ipynb) (Simple 2D optimization problem)
+* [Griewangk](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks/Griewangk.ipynb) (10-dimensional double precision optimization)
+* [PressureVesselOptimization](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks/PressureVesselOptimization.ipynb) (MINLP optimization of pressure vessel mass)
+* [SpringOptimization](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks/SpringOptimization.ipynb) (MINLP optimization of spring mass)
+* [Inverse Gaussian bumps](https://nbviewer.jupyter.org/github/usnistgov/CEGO/tree/master/notebooks/InverseBumps.ipynb) (inverse modeling with Gaussian bumps)
 
 ## License
 
