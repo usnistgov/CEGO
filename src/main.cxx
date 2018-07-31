@@ -1,6 +1,7 @@
 // See http://dr.library.brocku.ca/bitstream/handle/10464/10416/Brock_Opoku-Amankwaah_Audrey_2016.pdf?sequence=1
 
 #include "CEGO/CEGO.hpp"
+#include "CEGO/lhs.hpp"
 #include "CEGO/evolvers/evolvers.hpp"
 #include <string>
 #include <atomic>
@@ -72,6 +73,8 @@ void do_Griewangk() {
     std::cout << "Ncalls: " << Ncalls << std::endl;
 }
 int main(){
+    Eigen::ArrayXXd samples =LHS_samples(5,2);
+
     //test_bounds();
     do_Griewangk<double>();
     do_Griewangk<CEGO::numberish>();
@@ -150,6 +153,8 @@ void init_PyCEGO(py::module &m) {
     typedef Layers<CEGO::numberish> NumberishLayers;
     py::class_<NumberishLayers> numberish_layers(m, "NumberishLayers");
     upgrade_Layers(numberish_layers);
+
+    m.def("LHS_samples", &LHS_samples);
 
 }
 
