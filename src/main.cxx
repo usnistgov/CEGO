@@ -73,7 +73,6 @@ void do_Griewangk() {
     std::cout << "Ncalls: " << Ncalls << std::endl;
 }
 int main(){
-    Eigen::ArrayXXd samples =LHS_samples(5,2);
 
     //test_bounds();
     do_Griewangk<double>();
@@ -103,6 +102,8 @@ void upgrade_Layers(py::class_<CEGO::Layers<T>> &layers){
     layers.def("get_results", &MyLayers::get_results);
     layers.def("get_logging_scheme", &MyLayers::get_logging_scheme);
     layers.def("set_logging_scheme", &MyLayers::set_logging_scheme);
+    layers.def("get_generation_mode", &MyLayers::get_generation_mode);
+    layers.def("set_generation_mode", &MyLayers::set_generation_mode);
     layers.def("set_filtering_function", &MyLayers::set_filtering_function);
     layers.def("set_builtin_evolver", &MyLayers::set_builtin_evolver);
     layers.def("get_evolver_flags", [](MyLayers &layers) { return layers.get_evolver_flags().dump(); });
@@ -134,6 +135,12 @@ void init_PyCEGO(py::module &m) {
         .value("none", LS::none)
         .value("all", LS::all)
         .value("custom", LS::custom)
+        ;
+
+    typedef GenerationOptions go;
+    py::enum_<GenerationOptions >(m, "GenerationOptions")
+        .value("LHS", go::LHS)
+        .value("random", go::random)
         ;
 
     typedef FilterOptions fo;

@@ -87,9 +87,43 @@ namespace CEGO{
         }
         return out;
     }
+
+    /// Generate a population of individuals with the use of Latin-Hypercube sampling
+    template<typename T>
+    Population LHS_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const CostFunction &cost_function)
+    {
+        // Generate the set of floating parameters in [0,1]
+        Eigen::ArrayXXd population = LHS_samples(count, bounds.size());
+
+        auto length_ind = bounds.size();
+        auto gen = get_gen();
+        Population out; out.reserve(count);
+        for (std::size_t i = 0; i < count; ++i) {
+            std::vector<T> c; c.reserve(length_ind);
+            for (std::size_t j = 0; j < length_ind; ++j) {
+                auto &&bound = bounds[j];
+
+                switch (bound.m_lower.type) {
+                case CEGO::numberish::types::DOUBLE:
+                {
+                    double w = population(i,j);
+                    c.emplace_back(bound.m_lower.as_double()*w + bound.m_upper.as_double()*(1-w)); break;
+                }
+                case CEGO::numberish::types::INT:{
+                    double w = population(i, j);
+                    c.emplace_back(int(round(bound.m_lower.as_int()*w + bound.m_upper.as_int()*(1 - w)))); break;
+                }
+                }
+            }
+            assert(c.size() == length_ind);
+            out.emplace_back(pIndividual(new NumericalIndividual<T>(std::move(c), cost_function)));
+        }
+        return out;
+    }
     
     enum class LoggingScheme { none = 0, all, custom };
     enum class FilterOptions { accept, reject };
+    enum class GenerationOptions { LHS, random };
 
     template<typename T>
     class Layers {
@@ -104,7 +138,8 @@ namespace CEGO{
             // Generate all the individuals serially(!)
             MutantVector mutants;
             for (auto i = 0; i < Nlayers; ++i) {
-                for (auto && ind : random_population<T>(m_bounds, Npop_size, m_cost_function)) {
+                auto generator = (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
+                for (auto && ind : generator(m_bounds, Npop_size, m_cost_function)) {
                     mutants.emplace_back(std::make_pair(i, std::move(ind)));
                 }
             }
@@ -127,6 +162,7 @@ namespace CEGO{
         std::function<FilterOptions(const Result &)> m_filter_function; 
         std::unique_ptr<AbstractEvolver<T> > m_evolver; ///< The functor that is to be used to evolve a layer
         std::vector<Bound> m_bounds;
+        GenerationOptions m_generation_flag = GenerationOptions::random;
         CostFunction m_cost_function;
         std::size_t m_Nelite = 2;
     public:
@@ -191,6 +227,16 @@ namespace CEGO{
         const CostFunction &get_cost_function() {
             return m_cost_function;
         }
+
+        /// Set the flag to determine whether LHS or random (or other) is to be used to generate the population
+        void set_generation_mode(GenerationOptions flag) {
+            m_generation_flag = flag;
+        }
+
+        /// Get the flag to determine whether LHS or random is to be used to generate the population
+        GenerationOptions get_generation_mode() {
+            return m_generation_flag;
+        }
     
         /** Iterate over the layers and find individuals that are too old for the given layer
          * 
@@ -237,8 +283,10 @@ namespace CEGO{
                 if (layer.size() < Npop_size) {
                     // How many individuals are missing?
                     auto missing_individuals_count = Npop_size - layer.size();
+                    // Get the generator function
+                    auto generator = (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
                     // Then we pad out the population with new random individuals as needed (they start with an age of zero)
-                    for (auto && ind : random_population<T>(m_bounds, missing_individuals_count, m_cost_function)) {
+                    for (auto && ind : generator(m_bounds, missing_individuals_count, m_cost_function)) {
                         mutants.emplace_back(std::make_pair(i, std::move(ind)));
                     }
                 }
@@ -469,7 +517,8 @@ namespace CEGO{
 
             // Then we pad out the population with new random individuals as needed (they start with an age of zero)
             if (missing_individuals_count > 0) {
-                Population random_inds = random_population<T>(m_bounds, missing_individuals_count, m_cost_function);
+                auto generator = (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
+                Population random_inds = generator(m_bounds, missing_individuals_count, m_cost_function);
                 std::move(random_inds.begin(), random_inds.end(), std::back_inserter(new_layer));
             }
 
@@ -516,7 +565,8 @@ namespace CEGO{
 
                 // Generate new individuals in serial (fast)
                 MutantVector mutants;
-                for (auto && ind : random_population<T>(m_bounds, Npop_size, m_cost_function)) {
+                auto generator = (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
+                for (auto && ind : generator(m_bounds, Npop_size, m_cost_function)) {
                     mutants.emplace_back(std::make_pair(0,std::move(ind)));
                 }
                 // Evaluate the individuals in parallel
@@ -607,6 +657,7 @@ namespace CEGO{
         auto layers = Layers<T>(in.f, D, in.NP, in.Nlayer, in.age_gap);
         layers.set_bounds(in.bounds);
         layers.parallel = in.parallel;
+        layers.set_builtin_evolver(BuiltinEvolvers::differential_evolution);
         auto startTime = std::chrono::system_clock::now();
         for (auto i = 0; i < in.max_gen; ++i) {
             layers.do_generation();
