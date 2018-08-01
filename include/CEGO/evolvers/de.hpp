@@ -106,11 +106,11 @@ struct DifferentialEvolutionFlags {
     double CR = 0.9;   ///< The crossover rate
 };
 
-void to_json(nlohmann::json& j, const DifferentialEvolutionFlags& f) {
+inline void to_json(nlohmann::json& j, const DifferentialEvolutionFlags& f) {
     j = nlohmann::json{ { "Nelite", f.Nelite },{ "Fmin", f.Fmin },{ "Fmax", f.Fmax },{"CR",f.CR} };
 }
 
-void from_json(const nlohmann::json& j, DifferentialEvolutionFlags& f) {
+inline void from_json(const nlohmann::json& j, DifferentialEvolutionFlags& f) {
     f.Nelite = j.at("Nelite").get<int>(); 
     f.Fmin = j.at("Fmin").get<double>();
     f.Fmax = j.at("Fmax").get<double>(); 
