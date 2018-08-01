@@ -22,6 +22,7 @@
 #include <Eigen/Dense>
 #include "CEGO/datatypes.hpp"
 #include "CEGO/utilities.hpp"
+#include "CEGO/lhs.hpp"
 
 #include "CEGO/evolvers/evolvers.hpp"
 
