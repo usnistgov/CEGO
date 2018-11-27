@@ -22,7 +22,7 @@ Statically rendered examples are provided as Jupyter notebooks served on nbviewe
 
 ## License
 
-*MIT licensed (see LICENSE for specifics), not subject to copyright in the USA.
+*MIT licensed (see LICENSE for specifics), not subject to copyright in the USA. Foreign Rights Reserved, Secretary of Commerce.
 
 ## Dependencies
 
