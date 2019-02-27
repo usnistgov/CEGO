@@ -1,11 +1,13 @@
 #include "CEGO/CEGO.hpp"
 #include <Eigen/Dense>
+#if defined(PYBIND11)
 #include <pybind11/embed.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
+#endif
 
 std::atomic_size_t Ncalls(0);
 
@@ -103,6 +105,7 @@ public:
     }
        
     void plot_surface() {
+        #if defined(PYBIND11)
         using namespace pybind11::literals;
         py::module plt = py::module::import("matplotlib.pyplot"); // Import matplotlib
         std::size_t Nx = 100, Ny = 100;
@@ -122,11 +125,18 @@ public:
         plt.attr("colorbar")(); 
         plt.attr("scatter")(xp, yp);
         plt.attr("show")();
+        #else
+        std::cout << "No support for pybind11, so no plots\n";
+        #endif
     }
     void plot_trace(const std::vector<double> &best_costs) {
+        #if defined(PYBIND11)
         py::module plt = py::module::import("matplotlib.pyplot"); // Import matplotlib
         plt.attr("plot")(best_costs);
         plt.attr("show")();
+        #else
+        std::cout << "No support for pybind11, so no plots\n";
+        #endif
     }
 };
 
@@ -230,7 +240,9 @@ void do_one(BumpsInputs &inputs)
 }
 
 int main() {
+    #if defined(PYBIND11)
     py::scoped_interpreter interp{};
+    #endif
     BumpsInputs in;
     in.root = "shaped-";
     in.Nlayersvec = {1};

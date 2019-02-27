@@ -1,11 +1,13 @@
 #include "CEGO/CEGO.hpp"
 #include <Eigen/Dense>
+#if defined(PYBIND11)
 #include <pybind11/embed.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
+#endif
 #include <atomic>
 
 std::atomic_size_t Ncalls(0);
@@ -63,6 +65,7 @@ public:
         return (f_givenxy(c.head(Nbumps), c.tail(Nbumps), xp, yp) - zp).square().sum() + penalty(c);
     }
     void plot_surface() {
+        #if defined(PYBIND11)
         using namespace pybind11::literals;
         py::module plt = py::module::import("matplotlib.pyplot"); // Import matplotlib
         std::size_t Nx = 100, Ny = 100;
@@ -74,11 +77,18 @@ public:
         plt.attr("contourf")(X, Y, Z, "N"_a=3000);
         plt.attr("scatter")(xp, yp);
         plt.attr("show")();
+        #else
+        std::cout << "No pybind11 support, so no plots\n";
+        #endif
     }
     void plot_trace(const std::vector<double> &best_costs) {
+        #if defined(PYBIND11)
         py::module plt = py::module::import("matplotlib.pyplot"); // Import matplotlib
         plt.attr("plot")(best_costs);
         plt.attr("show")();
+        #else
+        std::cout << "No pybind11 support, so no plots\n";
+        #endif
     }
 };
 

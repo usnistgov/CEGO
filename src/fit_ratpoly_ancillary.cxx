@@ -1,5 +1,6 @@
 #include "CEGO/CEGO.hpp"
 #include <Eigen/Dense>
+#if defined(PYBIND11)
 #include <pybind11/embed.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -208,3 +209,9 @@ int main()
     std::cout << "NFE:" << Ncalls << std::endl;
 
 }
+
+#else
+int main(){
+    std::cout << "Due to missing support for pybind11, this file cannot be run\n";
+}
+#endif

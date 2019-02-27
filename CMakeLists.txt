@@ -10,9 +10,16 @@ if (NOT CEGO_NO_PYTHON)
 endif()
 
 macro(add_nix_libraries target)
+    # See https://stackoverflow.com/a/29871891
     # Add DL and pthreads
     FIND_PACKAGE ( Threads REQUIRED )
-    target_link_libraries (${target} PRIVATE ${CMAKE_DL_LIBS} PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+    find_package(Threads REQUIRED)
+    if(THREADS_HAVE_PTHREAD_ARG)
+      target_compile_options(${target} PUBLIC "-pthread")
+    endif()
+    if(CMAKE_THREAD_LIBS_INIT)
+      target_link_libraries(${target} "${CMAKE_THREAD_LIBS_INIT}")
+    endif()
 endmacro()
 
 function(attach_includes target)

@@ -1,6 +1,7 @@
 #include "CEGO/concurrentqueue.h"
 #include "CEGO/CEGO.hpp"
 #include <Eigen/Dense>
+#if defined(PYBIND11)
 #include <pybind11/embed.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -62,9 +63,13 @@ public:
         m_T.conservativeResize(j);
     }
     void plot_curve(){
+        #if defined(PYBIND11)
         py::module plt = py::module::import("matplotlib.pyplot"); // Import matplotlib
         plt.attr("plot")(1/m_T, m_LHS);
         plt.attr("show")();
+        #else
+        std::cout << "No pybind11 support, so no plots\n";
+        #endif
     }
     Eigen::ArrayXd eval_RHS(const Eigen::ArrayXd& T, const Eigen::ArrayXd &c) {
         return c[3]*pow(10,c[0]-c[1]/(c[2]+T));
@@ -79,9 +84,13 @@ public:
         return ssq;
     }
     void plot_trace(const std::vector<double> &best_costs) {
+        #if defined(PYBIND11)
         py::module plt = py::module::import("matplotlib.pyplot"); // Import matplotlib
         plt.attr("plot")(best_costs);
         plt.attr("show")();
+        #else
+        std::cout << "No pybind11 support, so no plots\n";
+        #endif
     }
     const Eigen::ArrayXd &get_T(){ return m_T; }
 };
@@ -151,3 +160,11 @@ int main()
     std::cout << "run:" << elap << " s\n";
     std::cout << "NFE:" << Ncalls << std::endl;
 }
+
+#else
+
+int main(){
+    std::cout << "Due to lack of pybind11 support, this file cannot be run\n";
+}
+
+#endif
