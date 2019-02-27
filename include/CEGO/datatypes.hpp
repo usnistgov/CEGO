@@ -328,7 +328,7 @@ namespace CEGO {
             assert(needs_evaluation() == false);
             return m_cost;
         }
-        Eigen::ArrayXd get_coeffs_ArrayXd() {
+        Eigen::ArrayXd get_coeffs_ArrayXd() override {
             Eigen::ArrayXd o(m_c.size());
             for (auto i = 0; i < m_c.size(); ++i) {
                 o[i] = m_c[i];
