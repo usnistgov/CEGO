@@ -9,12 +9,21 @@ if (NOT CEGO_NO_PYTHON)
   add_subdirectory("${CMAKE_SOURCE_DIR}/externals/pybind11" "pybind11")
 endif()
 
+macro(add_nix_libraries target)
+    # Add DL and pthreads
+    FIND_PACKAGE ( Threads REQUIRED )
+    target_link_libraries (${target} PRIVATE ${CMAKE_DL_LIBS} PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+endmacro()
+
 function(attach_includes target)
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/Eigen")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/Catch/single_include")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/ThreadPool2")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/nlohmann")
+  if (NOT MSVC)
+    add_nix_libraries(${target})
+  endif()
 endfunction()
 
 if (NOT CEGO_NO_PYTHON)
