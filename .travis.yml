@@ -27,9 +27,7 @@ script:
   - cd build
   - cmake .. -DCEGO_ALL=ON -DCEGO_NO_PYTHON=ON
   - cmake --build . --config Release
-  - ./Antoine
-  - ./fit_ratpoly_ancillary
-  - ./StornPriceProfiling
+  - ./StornPriceprofiling
   - ./main
   - ./shaped_inverse_gaussian
 

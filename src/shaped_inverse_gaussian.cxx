@@ -185,6 +185,7 @@ void do_one(BumpsInputs &inputs)
         auto layers = CEGO::Layers<CEGO::numberish>(cost_wrapper, bounds.size(), Npop_size, Nlayers, 5);
         layers.parallel = (inputs.parallel_threads > 1);
         layers.parallel_threads = inputs.parallel_threads;
+        layers.set_builtin_evolver(CEGO::BuiltinEvolvers::differential_evolution);
         layers.set_bounds(nbounds);
 
         auto flags = layers.get_evolver_flags();
@@ -247,7 +248,7 @@ int main() {
     in.root = "shaped-";
     in.Nlayersvec = {1};
     for (in.parallel_threads = 4; in.parallel_threads <= 4; in.parallel_threads *= 2){
-        for (in.Nbumps = 3; in.Nbumps < 101; ++in.Nbumps){
+        for (in.Nbumps = 3; in.Nbumps < 5; ++in.Nbumps){
             for (in.i = 0; in.i < 1; ++in.i) {
                 do_one(in);
             }
