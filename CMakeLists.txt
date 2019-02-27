@@ -15,10 +15,12 @@ function(attach_includes target)
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/nlohmann")
 endfunction()
 
-# Build pybind11 python module
-pybind11_add_module(PyCEGO "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cxx")
-target_compile_definitions(PyCEGO PUBLIC -DPYBIND11)
-attach_includes(PyCEGO)
+if (NOT CEGO_NO_PYTHON)
+  # Build pybind11 python module
+  pybind11_add_module(PyCEGO "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cxx")
+  target_compile_definitions(PyCEGO PUBLIC -DPYBIND11)
+  attach_includes(PyCEGO)
+endif()
 
 if (CEGO_ALL)
   set(APP_SOURCES)
