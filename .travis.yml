@@ -25,7 +25,7 @@ script:
   - git submodule update --init
   - mkdir build
   - cd build
-  - cmake .. -DCEGO_ALL=ON -DCEGO_NO_PYTHON=ON
+  - cmake .. -DCEGO_ALL=ON -DCEGO_NO_PYTHON=ON -DCMAKE_BUILD_TYPE=Release
   - cmake --build . --config Release
   - ./StornPriceprofiling
   - ./main
