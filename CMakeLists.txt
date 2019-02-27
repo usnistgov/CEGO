@@ -5,7 +5,9 @@ project(CEGO)
 set (CMAKE_CXX_STANDARD 11)
 
 # Add the pybind11 stuff
-add_subdirectory("${CMAKE_SOURCE_DIR}/externals/pybind11" "pybind11")
+if (NOT CEGO_NO_PYTHON)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/externals/pybind11" "pybind11")
+endif()
 
 function(attach_includes target)
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -35,7 +37,9 @@ if (CEGO_ALL)
   foreach (snippet ${snippets})
     get_filename_component(snippet_exe ${snippet} NAME_WE)
     add_executable(${snippet_exe} ${snippet})
-    target_link_libraries (${snippet_exe} PRIVATE pybind11::embed)
+    if (NOT CEGO_NO_PYTHON)
+      target_link_libraries (${snippet_exe} PRIVATE pybind11::embed)
+    endif()
     attach_includes(${snippet_exe})
   endforeach()
 
