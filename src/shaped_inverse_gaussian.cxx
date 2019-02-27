@@ -199,7 +199,7 @@ void do_one(BumpsInputs &inputs)
         std::vector<std::vector<double> > objs;
         double VTR = 1e-16, best_cost = 999999.0;
         auto startTime = std::chrono::system_clock::now();
-        for (auto counter = 0; counter < 50000; ++counter) {
+        for (auto counter = 0; counter < 5000; ++counter) {
             layers.do_generation();
 
             // Store the best objective function in each layer
