@@ -176,10 +176,13 @@ void do_one(BumpsInputs &inputs)
         layers.parallel = (inputs.parallel_threads > 1);
         layers.parallel_threads = inputs.parallel_threads;
         layers.set_bounds(nbounds);
-        layers.m_flags.Nelite = 1;
-        layers.m_flags.Fmin = 0.2;
-        layers.m_flags.Fmax = 1.0;
-        layers.m_flags.CR = 1;
+
+        auto flags = layers.get_evolver_flags();
+        flags["Nelite"] = 1;
+        flags["Fmin"] = 0.1;
+        flags["Fmax"] = 1.0;
+        flags["CR"] = 1;
+        layers.set_evolver_flags(flags);
 
         std::vector<double> best_costs; 
         std::vector<std::vector<double> > objs;

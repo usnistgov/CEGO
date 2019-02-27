@@ -107,10 +107,13 @@ int main()
     auto layers = CEGO::Layers<double>(cost_wrapper, bounds.size(), 2000, Nlayers, 3);
     layers.parallel = false;
     layers.set_bounds(bounds);
-    layers.m_flags.Nelite = 2;
-    layers.m_flags.Fmin = 0.5;
-    layers.m_flags.Fmax = 1;
-    layers.m_flags.CR = 0.7;
+
+    auto flags = layers.get_evolver_flags();
+    flags["Nelite"] = 2;
+    flags["Fmin"] = 0.5;
+    flags["Fmax"] = 1.0;
+    flags["CR"] = 0.7;
+    layers.set_evolver_flags(flags);
 
     std::vector<double> best_costs; 
     std::vector<std::vector<double> > objs;
@@ -141,67 +144,9 @@ int main()
 
     // Get the results stored in the thread-safe queue
     std::vector<CEGO::Result> results; Eigen::MatrixXd mat;
-    std::tie(results, mat) = layers.get_results();
-
-    // Filter the results to determine which should be accepted
-    Eigen::MatrixXd accepted; Eigen::Array<bool, Eigen::Dynamic, 1> is_accepted;
-    std::tie(accepted, is_accepted) = layers.get_accepted(mat, rp.get_T().size());
-    std::cout << accepted.rows() << "/" << mat.rows() << " or " << static_cast<double>(accepted.rows()) / mat.rows() * 100 << "% accepted\n";
+    results = layers.get_results();
 
     std::cout << "cbest" << Eigen::Map<Eigen::ArrayXd>(&(c[0]), c.size()) << std::endl;
-
-    // Write the Antoine samples from the fitter to file
-    std::fstream fs("Antoine_samples.csv", std::fstream::out);
-    for (auto i = 0; i < mat.cols() - 1; ++i) {
-        fs << "c[" << i << "],";
-    }
-    fs << "accepted,ssq\n";
-    auto i = 0;
-    for (auto &&r : results) {
-        for (auto i = 0; i < mat.cols() - 1; ++i) {
-            fs << r.c[i] << ",";
-        }
-        fs << is_accepted[i] << "," << r.ssq << std::endl;
-        i++;
-    }
-    
-    Eigen::ArrayXd maxes = accepted.colwise().maxCoeff();
-    Eigen::ArrayXd mins = accepted.colwise().minCoeff();
-
-    // Exhaustively sample the space in a grid
-    {
-        auto gen2 = [mins, maxes](Eigen::Index i) {
-            double width = maxes[i]-mins[i], mean = (maxes[i]+mins[i])/2; 
-            return Eigen::ArrayXd::LinSpaced(40, mean - width, mean + width); 
-        };
-        Eigen::ArrayXd c0s = gen2(0), c1s = gen2(1), c2s = gen2(2), c3s = gen2(3);
-        for (auto ic0 = 0; ic0 < c0s.size(); ++ic0) {
-            for (auto ic1 = 0; ic1 < c1s.size(); ++ic1) {
-                for (auto ic2 = 0; ic2 < c2s.size(); ++ic2) {
-                    for (auto ic3 = 0; ic3 < c3s.size(); ++ic3) {
-                        Eigen::Array4d c; c << c0s[ic0], c1s[ic1], c2s[ic2], c3s[ic3];
-                        rp.objective(c);
-                    }
-                }
-            }
-        }
-        
-        std::vector<CEGO::Result> results; Eigen::MatrixXd mat;
-        std::tie(results, mat) = layers.get_results();
-
-        std::fstream fs("Antoine_grid.csv", std::fstream::out);
-        for (auto i = 0; i < mat.cols() - 1; ++i) {
-            fs << "c[" << i << "],";
-        }
-        fs << "ssq\n";
-        for (auto &&r : results) {
-            for (auto i =0; i < mat.cols()-1; ++i){
-                fs << r.c[i] << ",";
-            }
-            fs << r.ssq << std::endl;
-        }
-        //std::cout << "In queue:" << rp.result_queue.size_approx() << std::endl;
-    }
         
     std::cout << "run:" << elap << " s\n";
     std::cout << "NFE:" << Ncalls << std::endl;

@@ -167,10 +167,13 @@ int main()
     auto layers = CEGO::Layers<double>(cost_wrapper, bounds.size(), 40, Nlayers, 5);
     layers.parallel = true;
     layers.set_bounds(bounds);
-    layers.m_flags.Nelite = 2;
-    layers.m_flags.Fmin = 0.5;
-    layers.m_flags.Fmax = 0.5;
-    layers.m_flags.CR = 0.9;
+
+    auto flags = layers.get_evolver_flags();
+    flags["Nelite"] = 2;
+    flags["Fmin"] = 0.5;
+    flags["Fmax"] = 0.5;
+    flags["CR"] = 0.9;
+    layers.set_evolver_flags(flags);
 
     std::vector<double> best_costs; 
     std::vector<std::vector<double> > objs;
