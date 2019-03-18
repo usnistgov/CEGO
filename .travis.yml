@@ -22,8 +22,8 @@ install:
 script: 
   - git submodule update --init
   - python setup.py build
-  - mkdir build
-  - cd build
+  - mkdir cmake-build
+  - cd cmake-build
   - cmake .. -DCEGO_ALL=ON -DCEGO_NO_PYTHON=ON -DCMAKE_BUILD_TYPE=Release
   - cmake --build . --config Release
   - ./StornPriceprofiling
