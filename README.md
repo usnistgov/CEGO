@@ -44,6 +44,8 @@ Statically rendered examples are provided as Jupyter notebooks served on nbviewe
 
 If you would like to contribute to ``CEGO`` or report a problem, please open a pull request or submit an issue.  Especially welcome would be additional tests.  
 
+If you want to discuss or request assistance, please open an issue.
+
 To get started, you should check out the Jupyter notebooks in the notebooks folder; they demonstrate some of the capabilities of CEGO.
 
 ## Installation
