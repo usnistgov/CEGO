@@ -22,7 +22,7 @@ CEGO (C++11 Evolutionary Global Optimization) is a C++11-based optimization libr
 
 A brief summary of the functionality of CEGO includes:
 
-* The implementation of the ALPS algorithm [@Hornby-GECCO-2006;@Hornby-GECCO-2009-ALPSsteady;@Hornby-GECCO-2009-ALPSgeneral] for age-layering several optimization runs together.  The layers interface is based on migration of younger individuals in the population into older layers.  If the individual is too old, and does not dominate another individual in its next layer, it is removed from the population.  Age layering can be disabled through the use of a single layer if desired.
+* The implementation of the ALPS algorithm [@Hornby-GECCO-2006;@Hornby-GECCO-2009-ALPSsteady] for age-layering several optimization runs together.  The layers interface is based on migration of younger individuals in the population into older layers.  If the individual is too old, and does not dominate another individual in its next layer, it is removed from the population.  Age layering can be disabled through the use of a single layer if desired.
 * Latin hypercube sampling to generate the initial population of individuals in the population.
 * A generic architecture for evolving the layered population(s).  In the current version, differential evolution [@Storn-JGO-1997] is the default evolving method, though an extensible API is available that allows for plug-and-play of alternative population evolution methods.  Flags for the evolver are handled in a generic way with a JavaScript Object Notation (JSON) structure.
 * Use of native C++11 threads (with a thread pool) to parallelize the evaluation of the cost function, allowing for a nearly-linear speedup as more computational cores are made available.
