@@ -22,22 +22,22 @@ CEGO (C++11 Evolutionary Global Optimization) is a C++11-based optimization libr
 
 A brief summary of the functionality of CEGO includes:
 
-* The implementation of the ALPS algorithm [@Hornby-GECCO-2006,@Hornby-GECCO-2009-ALPSsteady,@Hornby-GECCO-2009-ALPSgeneral] for age-layering several optimization runs together.  The layers interface is based on migration of younger individuals in the population into older layers.  If the individual is too old, and does not dominate another individual in its next layer, it is removed from the population.  Age layering can be disabled through the use of a single-layer if desired.
-* Latin-hypercube sampling to generate the initial population of individuals in the population.
-* A generic architecture for evolving the layered population(s).  In the current version, differential evolution [@Storn-JGO-1997] is the default evolving method, though an extensible API is available that allows for plug-and-play of alternative population evolution methods.  Flags for the evolver are handled in a generic way with a Javascript Object Notation (JSON) structure.
+* The implementation of the ALPS algorithm [@Hornby-GECCO-2006;@Hornby-GECCO-2009-ALPSsteady;@Hornby-GECCO-2009-ALPSgeneral] for age-layering several optimization runs together.  The layers interface is based on migration of younger individuals in the population into older layers.  If the individual is too old, and does not dominate another individual in its next layer, it is removed from the population.  Age layering can be disabled through the use of a single layer if desired.
+* Latin hypercube sampling to generate the initial population of individuals in the population.
+* A generic architecture for evolving the layered population(s).  In the current version, differential evolution [@Storn-JGO-1997] is the default evolving method, though an extensible API is available that allows for plug-and-play of alternative population evolution methods.  Flags for the evolver are handled in a generic way with a JavaScript Object Notation (JSON) structure.
 * Use of native C++11 threads (with a thread pool) to parallelize the evaluation of the cost function, allowing for a nearly-linear speedup as more computational cores are made available.
 * Ability to log all inputs and outputs (along with an optional filtering function) for further analysis of the progress of the optimization.
 * A single-threaded Python wrapper (``PyCEGO``) is written with ``pybind11``^[https://github.com/pybind/pybind11] and is used to demonstrate the functionality of the library, though it cannot fully leverage the parallelism available in CEGO at the C++ level.
 
-A few ``Jupyter`` notebooks [@ipython] are provided as examples that implement:
+A few ``Jupyter`` notebooks [@ipython;@Kluyver:2016aa] are provided as examples that implement:
 
 A) optimization of cost functions of two- and ten-dimensional continuous variables.
 B) the mixed-integer nonlinear optimization problems of the constrained optimization of a pressure vessel mass and dimensionally-constrained spring [@Sandgren-JMD-1990]
 C) inverse modeling of Gaussian bumps.  
 
-All global optimization problems successfully obtain the minimum value from the literature, or better.  Furthermore, a ``binder``^[https://mybinder.org/] environment has been configured such that the Jupyter notebooks can be run interactively in an internet browser without any installation on the user's computer.
+All global optimization problems successfully obtain the minimum value from the literature, or better.  Furthermore, a ``binder`` [@jupyter2018binder] environment has been configured such that the Jupyter notebooks can be run interactively in an internet browser without any installation on the user's computer.
 
-An example is given here of the global optimization of the modified hundred-digit optimization problem [@Townsend-THESIS],(Eq. 5.15), a function with 9,318 different local minima in [-1,1] x [-1,1].  CEGO finds the correct global minimum value of −3.398166873463248.
+An example is given here of the global optimization of the modified hundred-digit optimization problem [@Townsend-THESIS, Eq. 5.15], a function with 9,318 different local minima in $[-1,1] \times [-1,1]$.  CEGO finds the correct global minimum value of −3.398166873463248.
 
 ``` python
 from numpy import exp, sin
