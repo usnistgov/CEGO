@@ -60,7 +60,7 @@ class CMakeBuild(build_ext):
 
 setup(
     name='PyCEGO',
-    version='0.0.0',
+    version='1.0.0',
     author='Ian Bell',
     author_email='ian.bell@nist.gov',
     description='C++->python wrapper of C++11 Evolutionary Global Optimization (CEGO)',
