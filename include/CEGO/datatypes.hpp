@@ -308,17 +308,17 @@ namespace CEGO {
     /// A typedef for a population of individuals
     typedef std::vector<pIndividual > Population;
     /// A typedef for the cost function
-    typedef std::function<double(const AbstractIndividual *)> CostFunction;
+    template <typename T> using CostFunction = std::function<T(const AbstractIndividual *)>;
 
-    template<class T>
+    template<typename T>
     class NumericalIndividual : public AbstractIndividual {
     private:
         double m_cost;
         std::vector<T> m_c;
-        const CostFunction m_f;
+        const CostFunction<T> m_f;
     public:
-        NumericalIndividual(const std::vector<T>&&c, const CostFunction &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
-        NumericalIndividual(const std::vector<T>&c, const CostFunction &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
+        NumericalIndividual(const std::vector<T>&&c, const CostFunction<T> &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
+        NumericalIndividual(const std::vector<T>&c, const CostFunction<T> &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
         const std::vector<T> & get_coefficients() const { return m_c; };
         void calc_cost() override {
             m_cost = m_f(this);

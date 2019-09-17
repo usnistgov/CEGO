@@ -57,7 +57,7 @@ template<typename T>
 void do_Griewangk() {
     using namespace CEGO;
     Ncalls = 0;
-    ALPSInputValues in;
+    ALPSInputValues<T> in;
     in.f = [](const CEGO::AbstractIndividual *pind) {
         const auto &c = dynamic_cast<const NumericalIndividual<T>*>(pind)->get_coefficients();
         return Griewangk(c);

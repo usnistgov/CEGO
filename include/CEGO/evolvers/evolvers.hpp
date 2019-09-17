@@ -16,7 +16,7 @@ namespace CEGO {
         virtual Population evolve_layer(const std::vector<Population> &layers, 
             const std::size_t ilayer, 
             const std::vector<Bound> &bounds, 
-            const CostFunction &cost_function) const = 0;
+            const CostFunction<TYPE> &cost_function) const = 0;
         /// Set the flags in the derived class by passing a JSON dict
         virtual void set_flags(const nlohmann::json &JSON_flags) = 0;
         /// Get the flags in the derived class as a JSON dict
@@ -32,7 +32,7 @@ namespace CEGO {
             const std::vector<Population> &pop_layers, 
             const std::size_t ilayer, 
             const std::vector<Bound> &bounds, 
-            const CostFunction &cost_function) const {
+            const CostFunction<TYPE> &cost_function) const {
             Population empty;
             return differential_evolution<TYPE>(
                 pop_layers[ilayer],

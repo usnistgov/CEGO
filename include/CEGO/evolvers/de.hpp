@@ -50,9 +50,9 @@ namespace CEGO{
 
 
 
-template<typename T, class RNG>
+template<typename T, class RNG, typename TYPE>
 pIndividual DE1bin(const pIndividual &i0, const pIndividual &i1, const pIndividual &i2, const pIndividual &i3,
-                   RNG &gen, const CostFunction &m_function, double F = 0.5, double CR = 0.9) 
+                   RNG &gen, const CostFunction<TYPE> &m_function, double F = 0.5, double CR = 0.9) 
 {   
     // Copy of the coefficients for the base individual
     auto c0 = static_cast<T*>(i0.get())->get_coefficients();
@@ -76,9 +76,9 @@ pIndividual DE1bin(const pIndividual &i0, const pIndividual &i1, const pIndividu
     return pIndividual(new T(c0, m_function));
 };
 
-template<typename T, class RNG>
+template<typename T, class RNG, typename TYPE>
 pIndividual DE1exp(const pIndividual &i0, const pIndividual &i1, const pIndividual &i2, const pIndividual &i3,
-                   RNG &gen, const CostFunction &m_function, double F = 1.0, double CR = 0.9)
+                   RNG &gen, const CostFunction<TYPE> &m_function, double F = 1.0, double CR = 0.9)
 {
     // Copy of the coefficients
     auto c0 = static_cast<T*>(i0.get())->get_coefficients();
@@ -124,7 +124,7 @@ template<typename T>
 Population differential_evolution(const Population &this_layer, 
                                   const Population &older_layer, 
                                   const std::vector<Bound> &bounds, 
-                                  const CostFunction &cost_function, 
+                                  const CostFunction<T> &cost_function, 
                                   const DifferentialEvolutionFlags &flags)
 {
     Population outputs;

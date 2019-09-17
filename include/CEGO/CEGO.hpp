@@ -64,7 +64,7 @@ namespace CEGO{
 
     /// Generate a random population of individuals
     template<typename T>
-    Population random_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const CostFunction &cost_function) 
+    Population random_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const CostFunction<T> &cost_function) 
     {
         auto length_ind = bounds.size();
         auto gen = get_gen();
@@ -91,7 +91,7 @@ namespace CEGO{
 
     /// Generate a population of individuals with the use of Latin-Hypercube sampling
     template<typename T>
-    Population LHS_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const CostFunction &cost_function)
+    Population LHS_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const CostFunction<T> &cost_function)
     {
         // Generate the set of floating parameters in [0,1]
         Eigen::ArrayXXd population = LHS_samples(count, bounds.size());
@@ -164,7 +164,7 @@ namespace CEGO{
         std::unique_ptr<AbstractEvolver<T> > m_evolver; ///< The functor that is to be used to evolve a layer
         std::vector<Bound> m_bounds;
         GenerationOptions m_generation_flag = GenerationOptions::random;
-        CostFunction m_cost_function;
+        CostFunction<T> m_cost_function;
         std::size_t m_Nelite = 2;
     public:
         
@@ -183,7 +183,7 @@ namespace CEGO{
         };
 
         /// Constructor into which is passed a CostFunction and information about the layers
-        Layers(CostFunction &function, std::size_t Nind_size, std::size_t Npop_size, std::size_t Nlayers, std::size_t age_gap = 5) 
+        Layers(CostFunction<T> &function, std::size_t Nind_size, std::size_t Npop_size, std::size_t Nlayers, std::size_t age_gap = 5) 
             : Nind_size(Nind_size), Npop_size(Npop_size), Nlayers(Nlayers), age_gap(age_gap), m_cost_function(function){ };
 
         /// Specify the logging scheme that is to be employed
@@ -225,7 +225,7 @@ namespace CEGO{
         }
 
         /// Get the cost function that is being used currently
-        const CostFunction &get_cost_function() {
+        const CostFunction<T> &get_cost_function() {
             return m_cost_function;
         }
 
@@ -631,10 +631,11 @@ namespace CEGO{
             return results;
         }
     };
+    template <typename TYPE>
     struct ALPSInputValues {
         std::vector<Bound> bounds; ///< The vector of bounds on the variables
         double VTR; ///< Value to reach (terminates on reaching this cost value)
-        CostFunction f; ///< The cost function to be minimized
+        CostFunction<TYPE> f; ///< The cost function to be minimized
         bool parallel = false; ///< If true, evaluate each layer in a separate thread
         std::size_t max_gen = 1000; ///< Maximum number of generations that are allowed
         std::size_t NP = 40; ///< The number of individuals in a population (per layer)
@@ -649,7 +650,7 @@ namespace CEGO{
     };
 
     template<typename T>
-    ALPSReturnValues ALPS(ALPSInputValues &in) {
+    ALPSReturnValues ALPS(ALPSInputValues<T> &in) {
         if (in.bounds.empty()){ throw std::invalid_argument("bounds variable must be provided"); }
         //if (in.VTR) { throw std::invalid_argument("VTR variable must be provided"); }
         if (!in.f) { throw std::invalid_argument("Cost function f must be provided"); }
