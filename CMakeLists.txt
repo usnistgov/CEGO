@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(CEGO)
 
 # We heavily use C++11, C++11 support is required
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 
 # Add the pybind11 stuff
 if (NOT CEGO_NO_PYTHON)
@@ -25,9 +25,14 @@ endmacro()
 function(attach_includes target)
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/Eigen")
+  target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/autodiff")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/Catch/single_include")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/ThreadPool2")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/nlohmann")
+  set_target_properties(${snippet_exe} PROPERTIES
+    CXX_STANDARD 17
+    CXX_EXTENSIONS OFF
+  )
   if (NOT MSVC)
     add_nix_libraries(${target})
   endif()

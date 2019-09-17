@@ -6,6 +6,14 @@
 #include <string>
 #include <atomic>
 
+#include "Eigen/Core"
+using namespace Eigen;
+
+// autodiff include
+#include <autodiff/forward.hpp>
+#include <autodiff/forward/eigen.hpp>
+using namespace autodiff;
+
 // See http://stackoverflow.com/a/4609795
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
@@ -72,11 +80,25 @@ void do_Griewangk() {
     std::cout << "run: " << out.elapsed_sec << " s\n";
     std::cout << "Ncalls: " << Ncalls << std::endl;
 }
+
+void do_gradient() {
+    // The scalar function for which the gradient is needed
+    auto f = [](const VectorXdual& x) {
+        return x.cwiseProduct(x).sum(); // sum([x(i) * x(i) for i = 1:5])
+    };
+    VectorXdual x(5);    // the input vector x with 5 variables
+    x << 1, 2, 3, 4, 5;  // x = [1, 2, 3, 4, 5]
+    dual F;  // the output vector F = f(x) evaluated together with Jacobian matrix below
+    VectorXdual g = gradient(f, wrt(x), at(x), F);
+}
 int main(){
 
     //test_bounds();
     do_Griewangk<double>();
     do_Griewangk<CEGO::numberish>();
+
+    do_gradient();
+
     int rr =  0;
 }
 #else

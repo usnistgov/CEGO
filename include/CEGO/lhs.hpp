@@ -27,7 +27,9 @@ inline Eigen::ArrayXXd LHS_samples(Eigen::Index Npop, Eigen::Index Nparam) {
     auto random_indices = [](Eigen::Index Npop) {
         std::vector<Eigen::Index> indices;
         for (auto j = 0; j < Npop; ++j){ indices.emplace_back(j); }
-        std::random_shuffle(indices.begin(), indices.end());
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(indices.begin(), indices.end(), g);
         return indices;
     };
 
