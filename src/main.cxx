@@ -16,8 +16,15 @@ template <typename T> int sgn(T val) {
 }
 
 static std::atomic_size_t Ncalls(0);
-double Rosenbrock(const std::vector<double> &x){
-    return 100 * pow(pow(x[0], 2) - x[1], 2) + pow(1 - x[0], 2);
+
+template <typename T>
+T Rosenbrock(T x0, T x1) {
+    return 100 * pow(pow(x0, 2) - x1, 2) + pow(1 - x0, 2);
+}
+
+template <typename T>
+T Rosenbrock(const std::vector<T>& x) {
+    return Rosenbrock(x[0], x[1]);
 }
 
 template <typename T>
@@ -78,15 +85,14 @@ void do_Griewangk() {
 }
 
 void do_gradient() {
-    // The scalar function for which the gradient is needed
-    auto f = [](const Eigen::VectorXdual& x) {
-        return x.cwiseProduct(x).sum(); // sum([x(i) * x(i) for i = 1:5])
-    };
     using namespace autodiff;
     Eigen::VectorXdual x(5);    // the input vector x with 5 variables
-    x << 1, 2, 3, 4, 5;  // x = [1, 2, 3, 4, 5]
+    x << 1, 2;  // x = [1, 2, 3, 4, 5]
     dual F;  // the output vector F = f(x) evaluated together with Jacobian matrix below
-    Eigen::VectorXd g = gradient(f, wrt(x), at(x), F);
+    auto Rosenbrockdual = [](const Eigen::VectorXdual& x) {
+        return Rosenbrock(x[0], x[1]);
+    };
+    Eigen::VectorXd g = gradient(Rosenbrockdual, wrt(x), at(x), F);
     std::cout << g;
 }
 int main(){
