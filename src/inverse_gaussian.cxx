@@ -101,7 +101,7 @@ void do_one(const std::size_t Nbumps, const std::string &root, std::size_t i) {
     //bumps.plot_surface();
 
     auto D = 2*Nbumps; // twice because they are pairs
-    CEGO::CostFunction cost_wrapper = std::bind((double (Bumps::*)(const CEGO::AbstractIndividual *)) &Bumps::objective, bumps, std::placeholders::_1);
+    CEGO::CostFunction<double> cost_wrapper = std::bind((double (Bumps::*)(const CEGO::AbstractIndividual *)) &Bumps::objective, bumps, std::placeholders::_1);
     auto layers = CEGO::Layers<double>(cost_wrapper, D, 30*D, 1, 10);
     // Apply the bounds (all in [-1,1])
     layers.set_bounds(std::vector<CEGO::Bound>(D, CEGO::Bound(std::pair<double, double>(-15.0, 15.0))));
