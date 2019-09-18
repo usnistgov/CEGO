@@ -20,14 +20,23 @@ template <typename T> int sgn(T val) {
 static std::atomic_size_t Ncalls(0);
 
 template <typename T>
-T pow2(const T x0) {
+auto pow2(const T x0) {
     return x0*x0;
 }
 
 template <typename T>
-T Rosenbrock(const T x0, const T x1) {
-    return 100.0*(x0*x0 - x1)*(x0*x0 - x1) + (1.0-x0)*(1-x0);
+auto Rosenbrock(const T x0, const T x1) {
+    return 100.0*pow2(pow2(x0) - x1) + pow2(1.0-x0);
 }
+
+template <typename T>
+CEGO::EArray<T> Rosenbrock_exact_gradient(const T x0, const T x1) {
+    CEGO::EArray<T> o(2);
+    o(0) = 200* (pow2(x0) - x1)*(2*x0) -2*(1 - x0);
+    o(1) = 200*(pow2(x0) - x1) * -1;
+    return o;
+}
+
 
 template <typename T>
 T Rosenbrockvec(const Eigen::Array<T, Eigen::Dynamic, 1> & x) {
@@ -100,11 +109,14 @@ int main(){
     do_minimization<double>(RosenbrockI<double>, nullptr);
     do_minimization<CEGO::numberish>(RosenbrockI<CEGO::numberish>, nullptr);
 
-    Eigen::VectorXd x0(2); x0 << -0.5, 0.5;
+    Eigen::VectorXd x0(2); x0 << -0.3, 0.5;
     Eigen::VectorXd lbvec(2); lbvec << -1, -1;
     Eigen::VectorXd ubvec(2); ubvec << 1, 1;
+    CEGO::DoubleObjectiveFunction func = Rosenbrockvec<double>;
+    CEGO::DoubleGradientFunction grad = CEGO::AutoDiffGradient(Rosenbrockvec<autodiff::dual>);
+    std::cout << grad(x0) - Rosenbrock_exact_gradient(x0(0), x0(1)) << " must be zero\n";
     auto tic = std::chrono::high_resolution_clock::now();
-    box_gradient_minimization(Rosenbrockvec<autodiff::dual>, Rosenbrockvec<double>, x0, lbvec, ubvec);
+    CEGO::box_gradient_minimization(func, grad, x0, lbvec, ubvec);
     auto toc = std::chrono::high_resolution_clock::now();
     double elap = std::chrono::duration<double>(toc-tic).count();
     std::cout << elap << std::endl;
