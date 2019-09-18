@@ -1,10 +1,12 @@
+#include <string>
+#include <atomic>
+
 // See http://dr.library.brocku.ca/bitstream/handle/10464/10416/Brock_Opoku-Amankwaah_Audrey_2016.pdf?sequence=1
 
 #include "CEGO/CEGO.hpp"
 #include "CEGO/lhs.hpp"
 #include "CEGO/evolvers/evolvers.hpp"
-#include <string>
-#include <atomic>
+#include "CEGO/minimizers.hpp"
 
 // autodiff include
 #include <autodiff/forward.hpp>
@@ -92,43 +94,6 @@ void do_minimization(F f, G g) {
     std::cout << "Ncalls: " << Ncalls << std::endl;
 }
 
-template <typename Function, typename RealFunction>
-void box_gradient_minimization(Function &func, RealFunction &funcreal, const Eigen::VectorXd &x0) {
-    using namespace autodiff;
-    Eigen::VectorXdual x = x0.cast<autodiff::dual>();  // the input vector x, casted to VectorXd
-    dual F;
-    Eigen::ArrayXd ubvec(2), lbvec(2);
-    lbvec << 1, 1;
-    ubvec << -1, -1;
-    double c = 0.5, tau = 0.5;
-    for (auto counter = 0; counter <= 10000; ++counter) {
-        // Use autodiff to determine the gradient; steepest descent direction is 
-        // the negative of the gradient
-        Eigen::VectorXd g = gradient(func, wrt(x), at(x), F);
-        // Get real values as an array
-        const Eigen::ArrayXd xx = x.cast<double>();
-        // Check upper and lower bounds to determine the largest allowed value for alpha
-        Eigen::ArrayXd alphaub = ubvec / g.array(), alphalb = lbvec / g.array();
-        double alpha = std::max(alphaub.maxCoeff(), alphalb.maxCoeff());
-        // The termination condition for the reduction in objective function
-        double t = c*(g.array().square()).sum();
-        for (auto j = 0; j < 30; ++j) {
-            alpha *= tau;
-            auto fnew = funcreal((xx - alpha * g.array()).matrix());
-            double diff = val(F) - val(fnew);
-            if (diff > alpha*t) {
-                break;
-            }
-        }
-        x -= (alpha*g).cast<autodiff::dual>();
-        if (counter % 100 == 0) {
-            std::cout << counter << " " << F << " " << alpha << std::endl;
-        }
-        if (std::abs(val(F)) < 1e-10) {
-            break;
-        }
-    }
-}
 int main(){
 
     //test_bounds();
@@ -136,8 +101,10 @@ int main(){
     do_minimization<CEGO::numberish>(RosenbrockI<CEGO::numberish>, nullptr);
 
     Eigen::VectorXd x0(2); x0 << -0.5, 0.5;
+    Eigen::VectorXd lbvec(2); lbvec << -1, -1;
+    Eigen::VectorXd ubvec(2); ubvec << 1, 1;
     auto tic = std::chrono::high_resolution_clock::now();
-    box_gradient_minimization(Rosenbrockvec<autodiff::dual>, Rosenbrockvec<double>, x0);
+    box_gradient_minimization(Rosenbrockvec<autodiff::dual>, Rosenbrockvec<double>, x0, lbvec, ubvec);
     auto toc = std::chrono::high_resolution_clock::now();
     double elap = std::chrono::duration<double>(toc-tic).count();
     std::cout << elap << std::endl;
