@@ -18,13 +18,23 @@ template <typename T> int sgn(T val) {
 static std::atomic_size_t Ncalls(0);
 
 template <typename T>
-T Rosenbrock(T x0, T x1) {
-    return 100 * pow(pow(x0, 2) - x1, 2) + pow(1 - x0, 2);
+T pow2(const T x0) {
+    return x0*x0;
 }
 
 template <typename T>
-T Rosenbrock(const std::vector<T>& x) {
+T Rosenbrock(const T x0, const T x1) {
+    return 100.0*(x0*x0 - x1)*(x0*x0 - x1) + (1.0-x0)*(1-x0);
+}
+
+template <typename T>
+T Rosenbrock(const Eigen::Array<T,Eigen::Dynamic,1>& x) {
     return Rosenbrock(x[0], x[1]);
+}
+
+template <typename T>
+T RosenbrockI(const CEGO::AbstractIndividual* pind) {
+    return Rosenbrock(pind->get_coeffs_ArrayXd());
 }
 
 template <typename T>
@@ -64,15 +74,13 @@ void test_bounds() {
     int rr =0;
 }
 
-template<typename T>
-void do_Griewangk() {
+template<typename T, typename F, typename G>
+void do_minimization(F f, G g) {
     using namespace CEGO;
     Ncalls = 0;
     ALPSInputValues<T> in;
-    in.f = [](const CEGO::AbstractIndividual *pind) {
-        const auto &c = dynamic_cast<const NumericalIndividual<T>*>(pind)->get_coefficients();
-        return Griewangk(c);
-    };
+    in.f = f;
+    in.g = g;
     auto D = 10;
     for (auto i = 0; i < D; ++i) { in.bounds.push_back(std::pair<T,T>( -600, 600 )); }
     in.age_gap = 5;
@@ -84,24 +92,49 @@ void do_Griewangk() {
     std::cout << "Ncalls: " << Ncalls << std::endl;
 }
 
-void do_gradient() {
+void minimize_Rosenbrock() {
+    std::size_t calls = 0;
     using namespace autodiff;
-    Eigen::VectorXdual x(5);    // the input vector x with 5 variables
-    x << 1, 2;  // x = [1, 2, 3, 4, 5]
-    dual F;  // the output vector F = f(x) evaluated together with Jacobian matrix below
-    auto Rosenbrockdual = [](const Eigen::VectorXdual& x) {
+    Eigen::VectorXdual x(2);  // the input vector x
+    x << -0.5, 0.5; 
+    dual F;  // the output vector F = f(x) evaluated together with gradient below
+    auto Rosenbrockdual = [&calls](const Eigen::VectorXdual& x) {
+        calls++; 
         return Rosenbrock(x[0], x[1]);
     };
-    Eigen::VectorXd g = gradient(Rosenbrockdual, wrt(x), at(x), F);
-    std::cout << g;
+    auto Rosenbrockreal = [&calls](const Eigen::VectorXd& x) {
+        calls++;
+        return Rosenbrock(x[0], x[1]);
+    };
+    double c = 0.5, tau = 0.5;
+    for (auto counter = 0; counter <= 100000; ++counter) {
+        Eigen::VectorXd g = gradient(Rosenbrockdual, wrt(x), at(x), F);
+        const Eigen::ArrayXd xx = x.cast<double>();
+        double alpha = 0.5; // This should be changed maybe to something more reasonable
+        double t = c*(g.array().square()).sum();
+        for (auto j = 0; j < 10; ++j) {
+            alpha *= tau;
+            auto fnew = Rosenbrockreal((xx - alpha * g.array()).matrix());
+            double diff = val(F) - fnew;
+            if (diff > alpha*t) {
+                break;
+            }
+        }
+        x -= (alpha*g).cast<autodiff::dual>();
+        std::cout << counter << " " << F << " " << alpha << std::endl;
+        if (std::abs(val(F)) < 1e-10) {
+            break;
+        }
+    }
+    std::cout << "Calls:" << calls;
 }
 int main(){
 
     //test_bounds();
-    do_Griewangk<double>();
-    do_Griewangk<CEGO::numberish>();
+    do_minimization<double>(RosenbrockI<double>, nullptr);
+    do_minimization<CEGO::numberish>(RosenbrockI<CEGO::numberish>, nullptr);
 
-    do_gradient();
+    minimize_Rosenbrock();
 
     int rr =  0;
 }
