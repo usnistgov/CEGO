@@ -98,6 +98,9 @@ void minimize_Rosenbrock() {
     Eigen::VectorXdual x(2);  // the input vector x
     x << -0.5, 0.5; 
     dual F;  // the output vector F = f(x) evaluated together with gradient below
+    Eigen::ArrayXd ubvec(2), lbvec(2);
+    lbvec << 1, 1;
+    ubvec << -1, -1;
     auto Rosenbrockdual = [&calls](const Eigen::VectorXdual& x) {
         calls++; 
         return Rosenbrock(x[0], x[1]);
@@ -110,9 +113,11 @@ void minimize_Rosenbrock() {
     for (auto counter = 0; counter <= 100000; ++counter) {
         Eigen::VectorXd g = gradient(Rosenbrockdual, wrt(x), at(x), F);
         const Eigen::ArrayXd xx = x.cast<double>();
-        double alpha = 0.5; // This should be changed maybe to something more reasonable
+        // Check upper and lower bounds to determine the largest allowed value for alpha
+        Eigen::ArrayXd alphaub = ubvec / g.array(), alphalb = lbvec / g.array();
+        double alpha = std::max(alphaub.maxCoeff(), alphalb.maxCoeff());
         double t = c*(g.array().square()).sum();
-        for (auto j = 0; j < 10; ++j) {
+        for (auto j = 0; j < 30; ++j) {
             alpha *= tau;
             auto fnew = Rosenbrockreal((xx - alpha * g.array()).matrix());
             double diff = val(F) - fnew;
