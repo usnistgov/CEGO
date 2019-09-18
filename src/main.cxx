@@ -33,6 +33,11 @@ T Rosenbrock(const Eigen::Array<T,Eigen::Dynamic,1>& x) {
 }
 
 template <typename T>
+T Rosenbrockvec(const Eigen::Array<T, Eigen::Dynamic, 1> & x) {
+    return Rosenbrock(x[0], x[1]);
+}
+
+template <typename T>
 T RosenbrockI(const CEGO::AbstractIndividual* pind) {
     return Rosenbrock(pind->get_coeffs_ArrayXd());
 }
@@ -92,7 +97,8 @@ void do_minimization(F f, G g) {
     std::cout << "Ncalls: " << Ncalls << std::endl;
 }
 
-void minimize_Rosenbrock() {
+template <typename Function, typename RealFunction>
+void box_gradient_minimization(Function &func, RealFunction &funcreal) {
     std::size_t calls = 0;
     using namespace autodiff;
     Eigen::VectorXdual x(2);  // the input vector x
@@ -101,25 +107,18 @@ void minimize_Rosenbrock() {
     Eigen::ArrayXd ubvec(2), lbvec(2);
     lbvec << 1, 1;
     ubvec << -1, -1;
-    auto Rosenbrockdual = [&calls](const Eigen::VectorXdual& x) {
-        calls++; 
-        return Rosenbrock(x[0], x[1]);
-    };
-    auto Rosenbrockreal = [&calls](const Eigen::VectorXd& x) {
-        calls++;
-        return Rosenbrock(x[0], x[1]);
-    };
     double c = 0.5, tau = 0.5;
     for (auto counter = 0; counter <= 100000; ++counter) {
-        Eigen::VectorXd g = gradient(Rosenbrockdual, wrt(x), at(x), F);
+        Eigen::VectorXd g = gradient(func, wrt(x), at(x), F);
         const Eigen::ArrayXd xx = x.cast<double>();
         // Check upper and lower bounds to determine the largest allowed value for alpha
         Eigen::ArrayXd alphaub = ubvec / g.array(), alphalb = lbvec / g.array();
         double alpha = std::max(alphaub.maxCoeff(), alphalb.maxCoeff());
+        // The termination condition for the reduction in objective function
         double t = c*(g.array().square()).sum();
         for (auto j = 0; j < 30; ++j) {
             alpha *= tau;
-            auto fnew = Rosenbrockreal((xx - alpha * g.array()).matrix());
+            auto fnew = funcreal((xx - alpha * g.array()).matrix());
             double diff = val(F) - fnew;
             if (diff > alpha*t) {
                 break;
@@ -139,7 +138,7 @@ int main(){
     do_minimization<double>(RosenbrockI<double>, nullptr);
     do_minimization<CEGO::numberish>(RosenbrockI<CEGO::numberish>, nullptr);
 
-    minimize_Rosenbrock();
+    box_gradient_minimization(Rosenbrockvec<autodiff::dual>, Rosenbrockvec<double>);
 
     int rr =  0;
 }
