@@ -260,7 +260,7 @@ void do_one(BumpsInputs &inputs)
                 }
                 //std::cout << pind->get_cost() << std::endl;
             };
-            if (counter % 50 == -1) {
+            if (counter % 50 == 0) {
                 layers.transform_individuals(minimizer);
             }
 
