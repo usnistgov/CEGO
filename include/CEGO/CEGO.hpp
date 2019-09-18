@@ -362,6 +362,29 @@ namespace CEGO{
             }
         }
 
+        /// Walk through all the individuals, apply some transformation
+        /// Function is allowed to change the individuals!
+        template <typename Function>
+        void transform_individuals(Function F) {
+
+            if (!parallel || parallel_threads == 0) {
+                for (auto& layer : m_layers) {
+                    for (auto& ind : layer) {
+                        F(ind);
+                    }
+                }
+            }
+            else {
+                for (auto& layer : m_layers) {
+                    for (auto& ind : layer) {
+                        m_pool->AddJob( [&F,&ind]() { F(ind); } );
+                    }
+                }
+                // Wait until all the threads finish...
+                m_pool->WaitAll();
+            }
+        }
+
         /// Calculate statistics of the costs of individuals in each layer
         std::vector<std::map<std::string, double> > cost_stats_each_layer() {
             std::vector<std::map<std::string, double> > out;

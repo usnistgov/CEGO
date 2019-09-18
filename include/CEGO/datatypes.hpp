@@ -320,6 +320,7 @@ namespace CEGO {
         NumericalIndividual(const std::vector<T>&&c, const CostFunction<T> &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
         NumericalIndividual(const std::vector<T>&c, const CostFunction<T> &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
         const std::vector<T> & get_coefficients() const { return m_c; };
+        void set_coefficients(const std::vector<T> &c){ m_c = c; };
         void calc_cost() override {
             m_cost = m_f(this);
         }

@@ -1,4 +1,5 @@
 #include "CEGO/CEGO.hpp"
+#include "CEGO/minimizers.hpp"
 #include <Eigen/Dense>
 
 // autodiff include
@@ -66,40 +67,34 @@ public:
     template <typename T>
     EArray<T> f_givenxy(const EArray<T> &c, const EArray<T> &x, const EArray<T> &y) 
     {
+        Ncalls++;
         EArray<T> s = EArray<T>::Zero(x.size());
         auto chunksize = 6; 
         assert(c.size()%chunksize==0);
         for (long i = 0; i < c.size(); i += chunksize) {
             s += x.pow(c[i+0])*y.pow(c[i+1])*(c[i+2]*(x-c[i+3]).square() +c[i+4]*(y-c[i+5]).square()).exp();
         }
-        return s;
+        return s.eval();
     }
     double objective(const CEGO::AbstractIndividual *pind) {
         const std::vector<CEGO::numberish> &c = static_cast<const CEGO::NumericalIndividual<CEGO::numberish>*>(pind)->get_coefficients();
         Eigen::ArrayXd cc(c.size());
         for (auto i = 0; i < cc.size(); ++i) {
             cc[i] = c[i];
-        }        
+        }
         return objective(cc);
     }
-    template <typename T>
-    T objectivev(EArray<T>& cscaled) {
-        return (f_givenxy<T>(to_realworld(cscaled), xp, yp) - zp).square().sum();
-    }
-    template <typename T>
-    T objective(const EArray<T> &cscaled) {
-        Ncalls ++;
-        return (f_givenxy(to_realworld(cscaled), xp, yp) - zp).square().sum();
+    double objective(const EArray<double>& cscaled) {
+        return (f_givenxy<double>(to_realworld<double>(cscaled), xp, yp) - zp).square().sum();
     }
 
-    template <typename T>
-    EArray<T> to_realworld(const std::vector<CEGO::numberish> &x) {
-        EArray<T> o(x.size());
-        for (auto i = 0; i < o.size(); ++i) {
-            o[i] = x[i];
-        }
-        return to_realworld(o);
+    autodiff::dual objective(const EArray<autodiff::dual>& cscaled) {
+        EArray<autodiff::dual> creal = to_realworld(cscaled);
+        EArray<autodiff::dual> zmodel = f_givenxy<autodiff::dual>(creal, xp, yp);
+        EArray<autodiff::dual> err = zmodel - zp.cast<autodiff::dual>();
+        return err.square().sum();
     }
+
     // Inspired by scipy, keep all variables scaled in 0,1
     template <typename T>
     EArray<T> to_realworld(const EArray<T>&x){
@@ -107,9 +102,9 @@ public:
         for (auto i = 0; i < o.size(); ++i){
             T lower = static_cast<T>(m_bounds[i].m_lower);
             T upper = static_cast<T>(m_bounds[i].m_upper);
-            o[i] = lower*(1-x[i]) + upper*x[i];
+            o[i] = lower*(static_cast<T>(1.0) - x[i]) + upper*x[i];
         }
-        return o;
+        return o.eval();
     }
     Eigen::ArrayXd to_scaled(const Eigen::ArrayXd &x) {
         Eigen::ArrayXd o(x.size());
@@ -219,6 +214,56 @@ void do_one(BumpsInputs &inputs)
         for (auto counter = 0; counter < 5000; ++counter) {
             layers.do_generation();
 
+            // Do a single step of gradient minimization for all individuals
+            auto minimizer = [&layers, &bumps](const CEGO::pIndividual &pind) {
+                auto bounds = layers.get_bounds();
+                Eigen::ArrayXd ub(bounds.size()), lb(bounds.size()), xnew(bounds.size());
+                auto i = 0;
+                for (auto& b : layers.get_bounds()) {
+                    ub(i) = b.m_upper;
+                    lb(i) = b.m_lower;
+                    i++;
+                }
+                // Store current values
+                auto current_cost = pind->get_cost();
+
+                auto ind = static_cast<CEGO::NumericalIndividual<CEGO::numberish>*>(pind.get());
+                const std::vector<CEGO::numberish>& c = ind->get_coefficients();
+                Eigen::ArrayXd x0(c.size());
+                for (auto i = 0; i < c.size(); ++i) {
+                    x0[i] = c[i];
+                }
+
+                // Try to minimize with gradient
+                //
+                // The objective function to be minimized
+                CEGO::DoubleObjectiveFunction obj = [&layers, &bumps](const CEGO::EArray<double>& c) -> double {
+                    return bumps.objective(c);
+                };
+                auto F0 = obj(x0);
+                // The autodiff::dual function that will be used to do gradient optimization
+                CEGO::DoubleGradientFunction g = CEGO::AutoDiffGradient(
+                    [&layers, &bumps](const CEGO::EArray<autodiff::dual>& c) {
+                    return bumps.objective(c);
+                    }                
+                );
+                auto g0 = g(x0);
+                double F;
+                std::tie(xnew, F) = CEGO::gradient_linesearch(obj, g, x0, lb, ub);
+                if (F < F0) {
+                    std::vector<CEGO::numberish> cnew;
+                    for (auto i = 0; i < cnew.size(); ++i){
+                        cnew.push_back(xnew(i));
+                    }
+                    ind->set_coefficients(cnew);
+                    ind->calc_cost();
+                }
+                //std::cout << pind->get_cost() << std::endl;
+            };
+            if (counter % 50 == -1) {
+                layers.transform_individuals(minimizer);
+            }
+
             // Store the best objective function in each layer
             std::vector<double> oo;
             for (auto &&cost_coefficients : layers.get_best_per_layer()) {
@@ -265,7 +310,8 @@ int main() {
     in.root = "shaped-";
     in.Nlayersvec = {1};
     for (in.parallel_threads = 4; in.parallel_threads <= 4; in.parallel_threads *= 2){
-        for (in.Nbumps = 1; in.Nbumps < 6; ++in.Nbumps){
+        for (in.Nbumps = 5; in.Nbumps < 6; ++in.Nbumps){
+            std::cout << "Nbumps: " << in.Nbumps << std::endl;
             for (in.i = 0; in.i < 1; ++in.i) {
                 do_one(in);
             }
