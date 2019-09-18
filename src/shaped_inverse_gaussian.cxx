@@ -87,6 +87,9 @@ public:
     double objective(const EArray<double>& cscaled) {
         return (f_givenxy<double>(to_realworld<double>(cscaled), xp, yp) - zp).square().sum();
     }
+    std::complex<double> objective(const EArray<std::complex<double>>& cscaled) {
+        return (f_givenxy<std::complex<double>>(to_realworld<std::complex<double>>(cscaled), xp, yp) - zp).square().sum();
+    }
 
     autodiff::dual objective(const EArray<autodiff::dual>& cscaled) {
         EArray<autodiff::dual> creal = to_realworld(cscaled);
@@ -241,26 +244,28 @@ void do_one(BumpsInputs &inputs)
                     return bumps.objective(c);
                 };
                 auto F0 = obj(x0);
-                // The autodiff::dual function that will be used to do gradient optimization
-                CEGO::DoubleGradientFunction g = CEGO::AutoDiffGradient(
-                    [&layers, &bumps](const CEGO::EArray<autodiff::dual>& c) {
+                // The gradient function that will be used to do gradient optimization
+                CEGO::DoubleGradientFunction g = CEGO::ComplexStepGradient(
+                    [&layers, &bumps](const CEGO::EArray<std::complex<double>>& c) {
                     return bumps.objective(c);
-                    }                
+                    }
                 );
                 auto g0 = g(x0);
                 double F;
                 std::tie(xnew, F) = CEGO::gradient_linesearch(obj, g, x0, lb, ub);
                 if (F < F0) {
                     std::vector<CEGO::numberish> cnew;
-                    for (auto i = 0; i < cnew.size(); ++i){
+                    for (auto i = 0; i < xnew.size(); ++i){
                         cnew.push_back(xnew(i));
                     }
                     ind->set_coefficients(cnew);
                     ind->calc_cost();
                 }
-                //std::cout << pind->get_cost() << std::endl;
+                else {
+                    //std::cout << "no reduction\n";
+                }
             };
-            if (counter % 50 == 0) {
+            if (counter % 100 == 0) {
                 layers.transform_individuals(minimizer);
             }
 
