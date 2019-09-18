@@ -20,7 +20,7 @@ addons:
 
 # command to run tests
 script: 
-  - git submodule update --init
+  - git submodule update --init --recommend-shallow
   - python setup.py build
   - mkdir cmake-build
   - cd cmake-build
