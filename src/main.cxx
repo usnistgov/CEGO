@@ -91,7 +91,6 @@ void do_minimization(F f, G g) {
     Ncalls = 0;
     ALPSInputValues<T> in;
     in.f = f;
-    in.g = g;
     auto D = 10;
     for (auto i = 0; i < D; ++i) { in.bounds.push_back(std::pair<T,T>( -600, 600 )); }
     in.age_gap = 5;
