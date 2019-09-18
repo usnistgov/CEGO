@@ -28,18 +28,13 @@ T Rosenbrock(const T x0, const T x1) {
 }
 
 template <typename T>
-T Rosenbrock(const Eigen::Array<T,Eigen::Dynamic,1>& x) {
-    return Rosenbrock(x[0], x[1]);
-}
-
-template <typename T>
 T Rosenbrockvec(const Eigen::Array<T, Eigen::Dynamic, 1> & x) {
     return Rosenbrock(x[0], x[1]);
 }
 
 template <typename T>
 T RosenbrockI(const CEGO::AbstractIndividual* pind) {
-    return Rosenbrock(pind->get_coeffs_ArrayXd());
+    return Rosenbrockvec(pind->get_coeffs_ArrayXd());
 }
 
 template <typename T>
@@ -101,7 +96,7 @@ template <typename Function, typename RealFunction>
 void box_gradient_minimization(Function &func, RealFunction &funcreal, const Eigen::VectorXd &x0) {
     using namespace autodiff;
     Eigen::VectorXdual x = x0.cast<autodiff::dual>();  // the input vector x, casted to VectorXd
-    dual F;  // the output vector F = f(x) evaluated together with gradient below
+    dual F;
     Eigen::ArrayXd ubvec(2), lbvec(2);
     lbvec << 1, 1;
     ubvec << -1, -1;
