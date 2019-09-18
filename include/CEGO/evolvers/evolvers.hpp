@@ -17,6 +17,8 @@ namespace CEGO {
             const std::size_t ilayer, 
             const std::vector<Bound> &bounds, 
             const CostFunction<TYPE> &cost_function) const = 0;
+        /// Destructor
+        virtual ~AbstractEvolver() {};
         /// Set the flags in the derived class by passing a JSON dict
         virtual void set_flags(const nlohmann::json &JSON_flags) = 0;
         /// Get the flags in the derived class as a JSON dict
