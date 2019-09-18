@@ -239,10 +239,9 @@ void init_PyCEGO(py::module &m) {
 
 }
 
-PYBIND11_PLUGIN(PyCEGO) {
-    py::module m("PyCEGO", "Python wrapper of CEGO implementation of Ian Bell in C++11");
+PYBIND11_MODULE(PyCEGO, m){
+    m.doc() = "PyCEGO", "Python wrapper of CEGO implementation of Ian Bell in C++17";
     init_PyCEGO(m);
-    return m.ptr();
 }
 
 #endif
