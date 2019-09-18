@@ -79,16 +79,7 @@ public:
         Eigen::ArrayXd cc(c.size());
         for (auto i = 0; i < cc.size(); ++i) {
             cc[i] = c[i];
-        }
-
-        // Just for fun, calculate the gradient with autodiff
-        const Eigen::VectorXdual ccdual = cc.cast<autodiff::dual>();
-        EArray<autodiff::dual> aadual = ccdual.array();
-        using namespace autodiff;
-        dual o;
-        auto gfunc = std::bind(&Bumps::objectivev<autodiff::dual>, this, std::placeholders::_1);
-        Eigen::VectorXd g = gradient(gfunc, wrt(aadual), at(aadual), o);
-        
+        }        
         return objective(cc);
     }
     template <typename T>
