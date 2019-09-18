@@ -20,12 +20,12 @@ template <typename T> int sgn(T val) {
 static std::atomic_size_t Ncalls(0);
 
 template <typename T>
-auto pow2(const T x0) {
+auto pow2(T x0) {
     return x0*x0;
 }
 
 template <typename T>
-auto Rosenbrock(const T x0, const T x1) {
+auto Rosenbrock(T x0, T x1) {
     return 100.0*pow2(pow2(x0) - x1) + pow2(1.0-x0);
 }
 
@@ -37,10 +37,19 @@ CEGO::EArray<T> Rosenbrock_exact_gradient(const T x0, const T x1) {
     return o;
 }
 
-
 template <typename T>
-T Rosenbrockvec(const Eigen::Array<T, Eigen::Dynamic, 1> & x) {
+T Rosenbrockvec(const Eigen::Matrix<T, Eigen::Dynamic, 1,0, Eigen::Dynamic, 1> & x) {
     return Rosenbrock(x[0], x[1]);
+}
+
+autodiff::dual Rosenbrockvek(const CEGO::EVector<autodiff::dual> & x) {
+    return Rosenbrock(x[0], x[1]); //100.0 * (x(0)*x(0)-x(1)) * (x(0)*x(0)-x(1)) + (1.0-x(0)) * (1.0-x(0));
+}
+autodiff::dual Rosenbrockvek1(const CEGO::EVector<autodiff::dual>& x) {
+    return 100.0 * pow2(x(0) * x(0) - x(1)) + pow2(1.0 - x(0));
+}
+autodiff::dual Rosenbrockvek2(const CEGO::EVector<autodiff::dual>& x) {
+    return 100.0 * pow2(pow2(x(0)) - x(1)) + pow2(1.0 - x(0));
 }
 
 template <typename T>
@@ -105,17 +114,39 @@ void do_minimization(F f, G g) {
 int main(){
 
     //test_bounds();
-    do_minimization<double>(RosenbrockI<double>, nullptr);
-    do_minimization<CEGO::numberish>(RosenbrockI<CEGO::numberish>, nullptr);
+    //do_minimization<double>(RosenbrockI<double>, nullptr);
+    //do_minimization<CEGO::numberish>(RosenbrockI<CEGO::numberish>, nullptr);
 
     Eigen::VectorXd x0(2); x0 << -0.3, 0.5;
+    Eigen::ArrayXd gexact = Rosenbrock_exact_gradient(x0(0), x0(1)); 
+    std::cout << gexact << std::endl;
+    
+    Eigen::VectorXdual x0dual = x0.cast<autodiff::dual>();
+    Eigen::VectorXd g30 = autodiff::forward::gradient(Rosenbrockvec<autodiff::dual>, autodiff::wrt(x0dual), autodiff::forward::at(x0dual));
+    Eigen::VectorXd g3 = autodiff::forward::gradient(Rosenbrockvek, autodiff::wrt(x0dual), autodiff::forward::at(x0dual)); 
+    std::cout << g30.array() - gexact.array() << " should be zero\n";
+    std::cout << g3.array() - gexact.array() << " should be zero\n";
+
     Eigen::VectorXd lbvec(2); lbvec << -1, -1;
     Eigen::VectorXd ubvec(2); ubvec << 1, 1;
     CEGO::DoubleObjectiveFunction func = Rosenbrockvec<double>;
-    CEGO::DoubleGradientFunction grad = CEGO::AutoDiffGradient(Rosenbrockvec<autodiff::dual>);
-    std::cout << grad(x0) - Rosenbrock_exact_gradient(x0(0), x0(1)) << " must be zero\n";
+    const std::function<autodiff::dual(CEGO::EVector<autodiff::dual>&)> adf = Rosenbrockvec<autodiff::dual>;
+    CEGO::DoubleGradientFunction grad = CEGO::AutoDiffGradient(adf);
+
+    const std::function<std::complex<double>(CEGO::EVector<std::complex<double>>&) > csdf = Rosenbrockvec<std::complex<double>>;
+    CEGO::DoubleGradientFunction gradcsd = CEGO::ComplexStepGradient(csdf);
+    Eigen::ArrayXd g1 = grad(x0);
+    Eigen::ArrayXd g1csd = gradcsd(x0);
+    CEGO::DoubleGradientFunction gradexact = [](const CEGO::EArray<double>& c) -> CEGO::EArray<double> {
+        return Rosenbrock_exact_gradient(c(0), c(1));
+    };
+   
+    Eigen::ArrayXd g31 = autodiff::forward::gradient(Rosenbrockvek1, autodiff::wrt(x0dual), autodiff::forward::at(x0dual));
+    Eigen::ArrayXd g32 = autodiff::forward::gradient(Rosenbrockvek2, autodiff::wrt(x0dual), autodiff::forward::at(x0dual));
+    
+    std::cout << g1csd-gexact << " must be zero (CSD)\n";
     auto tic = std::chrono::high_resolution_clock::now();
-    CEGO::box_gradient_minimization(func, grad, x0, lbvec, ubvec);
+    CEGO::box_gradient_minimization(func, gradexact, x0, lbvec, ubvec);
     auto toc = std::chrono::high_resolution_clock::now();
     double elap = std::chrono::duration<double>(toc-tic).count();
     std::cout << elap << std::endl;
