@@ -1,5 +1,10 @@
 #include "CEGO/CEGO.hpp"
 #include <Eigen/Dense>
+
+// autodiff include
+#include <autodiff/forward.hpp>
+#include <autodiff/forward/eigen.hpp>
+
 #if defined(PYBIND11)
 #include <pybind11/embed.h>
 #include <pybind11/pybind11.h>
@@ -10,6 +15,8 @@ namespace py = pybind11;
 #endif
 
 std::atomic_size_t Ncalls(0);
+
+template <typename T> using EArray = Eigen::Array<T, Eigen::Dynamic, 1>;
 
 class Bumps {
 public:
@@ -56,11 +63,13 @@ public:
      * @brief x The x coordinate of the points to be evaluated
      * @brief y The y coordinate of the points to be evaluated
      */
-    Eigen::ArrayXd f_givenxy(const Eigen::ArrayXd &c, const Eigen::ArrayXd&x, const Eigen::ArrayXd &y) {
-        Eigen::ArrayXd s = Eigen::ArrayXd::Zero(x.size());
+    template <typename T>
+    EArray<T> f_givenxy(const EArray<T> &c, const EArray<T> &x, const EArray<T> &y) 
+    {
+        EArray<T> s = EArray<T>::Zero(x.size());
         auto chunksize = 6; 
         assert(c.size()%chunksize==0);
-        for (auto i = 0; i < c.size(); i += chunksize) {
+        for (long i = 0; i < c.size(); i += chunksize) {
             s += x.pow(c[i+0])*y.pow(c[i+1])*(c[i+2]*(x-c[i+3]).square() +c[i+4]*(y-c[i+5]).square()).exp();
         }
         return s;
@@ -71,25 +80,42 @@ public:
         for (auto i = 0; i < cc.size(); ++i) {
             cc[i] = c[i];
         }
+
+        // Just for fun, calculate the gradient with autodiff
+        const Eigen::VectorXdual ccdual = cc.cast<autodiff::dual>();
+        EArray<autodiff::dual> aadual = ccdual.array();
+        using namespace autodiff;
+        dual o;
+        auto gfunc = std::bind(&Bumps::objectivev<autodiff::dual>, this, std::placeholders::_1);
+        Eigen::VectorXd g = gradient(gfunc, wrt(aadual), at(aadual), o);
+        
         return objective(cc);
     }
-    double objective(const Eigen::ArrayXd &cscaled) {
+    template <typename T>
+    T objectivev(EArray<T>& cscaled) {
+        return (f_givenxy<T>(to_realworld(cscaled), xp, yp) - zp).square().sum();
+    }
+    template <typename T>
+    T objective(const EArray<T> &cscaled) {
         Ncalls ++;
         return (f_givenxy(to_realworld(cscaled), xp, yp) - zp).square().sum();
     }
-    Eigen::ArrayXd to_realworld(const std::vector<CEGO::numberish> &x) {
-        Eigen::ArrayXd o(x.size());
+
+    template <typename T>
+    EArray<T> to_realworld(const std::vector<CEGO::numberish> &x) {
+        EArray<T> o(x.size());
         for (auto i = 0; i < o.size(); ++i) {
             o[i] = x[i];
         }
         return to_realworld(o);
     }
     // Inspired by scipy, keep all variables scaled in 0,1
-    Eigen::ArrayXd to_realworld(const Eigen::ArrayXd &x){
-        Eigen::ArrayXd o(x.size());
+    template <typename T>
+    EArray<T> to_realworld(const EArray<T>&x){
+        EArray<T> o(x.size());
         for (auto i = 0; i < o.size(); ++i){
-            double lower = static_cast<double>(m_bounds[i].m_lower);
-            double upper = static_cast<double>(m_bounds[i].m_upper);
+            T lower = static_cast<T>(m_bounds[i].m_lower);
+            T upper = static_cast<T>(m_bounds[i].m_upper);
             o[i] = lower*(1-x[i]) + upper*x[i];
         }
         return o;
@@ -180,7 +206,7 @@ void do_one(BumpsInputs &inputs)
 
     for (auto Nlayers : inputs.Nlayersvec){
         Ncalls = 0;
-        CEGO::CostFunction cost_wrapper = std::bind((double (Bumps::*)(const CEGO::AbstractIndividual *)) &Bumps::objective, bumps, std::placeholders::_1);
+        CEGO::CostFunction<CEGO::numberish> cost_wrapper = std::bind((double (Bumps::*)(const CEGO::AbstractIndividual *)) &Bumps::objective, bumps, std::placeholders::_1);
         auto Npop_size = 15*bounds.size();
         auto layers = CEGO::Layers<CEGO::numberish>(cost_wrapper, bounds.size(), Npop_size, Nlayers, 5);
         layers.parallel = (inputs.parallel_threads > 1);
@@ -248,7 +274,7 @@ int main() {
     in.root = "shaped-";
     in.Nlayersvec = {1};
     for (in.parallel_threads = 4; in.parallel_threads <= 4; in.parallel_threads *= 2){
-        for (in.Nbumps = 3; in.Nbumps < 5; ++in.Nbumps){
+        for (in.Nbumps = 1; in.Nbumps < 6; ++in.Nbumps){
             for (in.i = 0; in.i < 1; ++in.i) {
                 do_one(in);
             }
