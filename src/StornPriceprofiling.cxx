@@ -71,7 +71,7 @@ public:
     }
     void run(){
         Ncalls = 0;
-        CEGO::CostFunction cost_wrapper = std::bind((double (StornTest::*)(const CEGO::AbstractIndividual *)) &StornTest::objective, this, std::placeholders::_1);
+        CEGO::CostFunction<double> cost_wrapper = std::bind((double (StornTest::*)(const CEGO::AbstractIndividual *)) &StornTest::objective, this, std::placeholders::_1);
         auto Npop_size = m_NP * m_bounds.size();
         short Nlayers = 1;
         auto layers = CEGO::Layers<double>(cost_wrapper, m_bounds.size(), Npop_size, Nlayers, 5000000000000);
