@@ -283,7 +283,7 @@ namespace CEGO {
         /// Calculate the cost of this individual
         virtual void calc_cost() = 0;
         /// Get the coefficients as an array of doubles.  Throws if not possible
-        virtual Eigen::ArrayXd get_coeffs_ArrayXd() = 0;
+        virtual Eigen::ArrayXd get_coeffs_ArrayXd() const = 0;
         /// Return a copy of this individual
         virtual pIndividual copy() const = 0;
         /// Evaluate the given individual; no-op if no evaluation is needed
@@ -329,7 +329,7 @@ namespace CEGO {
             assert(needs_evaluation() == false);
             return m_cost;
         }
-        Eigen::ArrayXd get_coeffs_ArrayXd() override {
+        Eigen::ArrayXd get_coeffs_ArrayXd() const override {
             Eigen::ArrayXd o(m_c.size());
             for (auto i = 0; i < m_c.size(); ++i) {
                 o[i] = m_c[i];
