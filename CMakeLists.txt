@@ -36,6 +36,9 @@ function(attach_includes target)
   if (NOT MSVC)
     add_nix_libraries(${target})
   endif()
+  if (MSVC)
+      list(APPEND APP_SOURCES "${CMAKE_SOURCE_DIR}/externals/Eigen/debug/msvc/eigen.natvis")
+  endif()
 endfunction()
 
 if (NOT CEGO_NO_PYTHON)
@@ -47,9 +50,6 @@ endif()
 
 if (CEGO_ALL)
   set(APP_SOURCES)
-  if (MSVC)
-      list(APPEND APP_SOURCES "${CMAKE_SOURCE_DIR}/externals/Eigen/debug/msvc/eigen.natvis")
-  endif()
 
   # Collect all the snippets in the src folder
   file(GLOB_RECURSE snippets "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cxx")
