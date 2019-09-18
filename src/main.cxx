@@ -98,18 +98,19 @@ void do_minimization(F f, G g) {
 }
 
 template <typename Function, typename RealFunction>
-void box_gradient_minimization(Function &func, RealFunction &funcreal) {
-    std::size_t calls = 0;
+void box_gradient_minimization(Function &func, RealFunction &funcreal, const Eigen::VectorXd &x0) {
     using namespace autodiff;
-    Eigen::VectorXdual x(2);  // the input vector x
-    x << -0.5, 0.5; 
+    Eigen::VectorXdual x = x0.cast<autodiff::dual>();  // the input vector x, casted to VectorXd
     dual F;  // the output vector F = f(x) evaluated together with gradient below
     Eigen::ArrayXd ubvec(2), lbvec(2);
     lbvec << 1, 1;
     ubvec << -1, -1;
     double c = 0.5, tau = 0.5;
-    for (auto counter = 0; counter <= 100000; ++counter) {
+    for (auto counter = 0; counter <= 10000; ++counter) {
+        // Use autodiff to determine the gradient; steepest descent direction is 
+        // the negative of the gradient
         Eigen::VectorXd g = gradient(func, wrt(x), at(x), F);
+        // Get real values as an array
         const Eigen::ArrayXd xx = x.cast<double>();
         // Check upper and lower bounds to determine the largest allowed value for alpha
         Eigen::ArrayXd alphaub = ubvec / g.array(), alphalb = lbvec / g.array();
@@ -119,18 +120,19 @@ void box_gradient_minimization(Function &func, RealFunction &funcreal) {
         for (auto j = 0; j < 30; ++j) {
             alpha *= tau;
             auto fnew = funcreal((xx - alpha * g.array()).matrix());
-            double diff = val(F) - fnew;
+            double diff = val(F) - val(fnew);
             if (diff > alpha*t) {
                 break;
             }
         }
         x -= (alpha*g).cast<autodiff::dual>();
-        std::cout << counter << " " << F << " " << alpha << std::endl;
+        if (counter % 100 == 0) {
+            std::cout << counter << " " << F << " " << alpha << std::endl;
+        }
         if (std::abs(val(F)) < 1e-10) {
             break;
         }
     }
-    std::cout << "Calls:" << calls;
 }
 int main(){
 
@@ -138,7 +140,12 @@ int main(){
     do_minimization<double>(RosenbrockI<double>, nullptr);
     do_minimization<CEGO::numberish>(RosenbrockI<CEGO::numberish>, nullptr);
 
-    box_gradient_minimization(Rosenbrockvec<autodiff::dual>, Rosenbrockvec<double>);
+    Eigen::VectorXd x0(2); x0 << -0.5, 0.5;
+    auto tic = std::chrono::high_resolution_clock::now();
+    box_gradient_minimization(Rosenbrockvec<autodiff::dual>, Rosenbrockvec<double>, x0);
+    auto toc = std::chrono::high_resolution_clock::now();
+    double elap = std::chrono::duration<double>(toc-tic).count();
+    std::cout << elap << std::endl;
 
     int rr =  0;
 }
