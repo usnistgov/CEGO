@@ -12,7 +12,8 @@ namespace CEGO {
 
     /**
     In this generic function, the gradient function is provided explicitly, convenient if
-    you know the analytic gradient (for simple objective functions)
+    you know the analytic gradient (for simple objective functions), or if you can 
+    calculate it with automatic differentiation
     */
     auto gradient_linesearch(DoubleObjectiveFunction& objfunc, DoubleGradientFunction& gradfunc, const Eigen::ArrayXd& x, const Eigen::ArrayXd& lbvec, const Eigen::ArrayXd& ubvec) {
         double c = 0.5, tau = 0.5;
@@ -30,9 +31,10 @@ namespace CEGO {
             double diff = F - fnew;
             if (diff > alpha * t) {
                 break;
+                return std::make_tuple((x - (alpha * g).array()).eval(), fnew);
             }
         }
-        return std::make_tuple((x - (alpha * g).array()).eval(), F);
+        return std::make_tuple(x, F);
     }
 
     /**
