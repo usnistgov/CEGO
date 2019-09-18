@@ -11,7 +11,7 @@ auto gradient_linesearch(Function& func, RealFunction& funcreal, Eigen::VectorXd
     double c = 0.5, tau = 0.5;
 
     // Use autodiff to determine the gradient; steepest descent direction is 
-        // the negative of the gradient
+    // the negative of the gradient
     Eigen::VectorXd g = gradient(func, wrt(x), at(x), F);
     // Get real values as an array
     const Eigen::ArrayXd xx = x.cast<double>();
