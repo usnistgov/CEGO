@@ -22,7 +22,7 @@ addons:
 # command to run tests
 script: 
   - git submodule update --init --recommend-shallow
-  - pip install setuptools
+  - pip3 install setuptools
   - python3 setup.py build
   - mkdir cmake-build
   - cd cmake-build
