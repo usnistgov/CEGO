@@ -54,7 +54,7 @@ autodiff::dual Rosenbrockvek2(const CEGO::EVector<autodiff::dual>& x) {
 
 template <typename T>
 T RosenbrockI(const CEGO::AbstractIndividual* pind) {
-    return Rosenbrockvec(pind->get_coeffs_ArrayXd());
+    return Rosenbrockvec(pind->get_coeffs_ArrayXd().matrix());
 }
 
 template <typename T>
