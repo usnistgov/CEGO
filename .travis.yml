@@ -21,7 +21,7 @@ addons:
 # command to run tests
 script: 
   - git submodule update --init --recommend-shallow
-  - python setup.py build
+  - python3 setup.py build
   - mkdir cmake-build
   - cd cmake-build
   - cmake .. -DCEGO_ALL=ON -DCEGO_NO_PYTHON=ON -DCMAKE_BUILD_TYPE=Release
