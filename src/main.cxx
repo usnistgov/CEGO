@@ -42,6 +42,11 @@ T Rosenbrockvec(const Eigen::Matrix<T, Eigen::Dynamic, 1,0, Eigen::Dynamic, 1> &
     return Rosenbrock(x[0], x[1]);
 }
 
+template <typename T>
+T Rosenbrockvec(const Eigen::Array<T, Eigen::Dynamic, 1, 0, Eigen::Dynamic, 1> & x) {
+    return Rosenbrock(x[0], x[1]);
+}
+
 autodiff::dual Rosenbrockvek(const CEGO::EVector<autodiff::dual> & x) {
     return Rosenbrock(x[0], x[1]); //100.0 * (x(0)*x(0)-x(1)) * (x(0)*x(0)-x(1)) + (1.0-x(0)) * (1.0-x(0));
 }
@@ -54,7 +59,7 @@ autodiff::dual Rosenbrockvek2(const CEGO::EVector<autodiff::dual>& x) {
 
 template <typename T>
 T RosenbrockI(const CEGO::AbstractIndividual* pind) {
-    return Rosenbrockvec(pind->get_coeffs_ArrayXd().matrix());
+    return Rosenbrockvec(pind->get_coeffs_ArrayXd());
 }
 
 template <typename T>
