@@ -13,6 +13,7 @@ addons:
     packages:
     - g++
     - clang
+    - python3-pip 
 
 # install:
 # - if [ "$CXX" = "g++" ]; then export CXX="g++-7" CC="gcc-7"; fi
@@ -21,7 +22,7 @@ addons:
 # command to run tests
 script: 
   - git submodule update --init --recommend-shallow
-  - python3 -m pip install setuptools
+  - pip install setuptools
   - python3 setup.py build
   - mkdir cmake-build
   - cd cmake-build
