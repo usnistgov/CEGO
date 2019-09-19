@@ -320,6 +320,9 @@ void do_one(BumpsInputs &inputs)
 int get_env_int(const std::string &var, int def) {
     try {
         char *s = std::getenv(var.c_str());
+        if (s == nullptr) {
+            return def;
+        }
         if (strlen(s) == 0) {
             return def;
         }
@@ -339,6 +342,8 @@ int main() {
     in.Nlayersvec = {1};
     auto Nrepeats = get_env_int("NREPEATS", 1);
     in.gradmin_mod = get_env_int("GRADMOD", 1000000000);
+    std::cout << "Nrepeats: " << Nrepeats << std::endl;
+    std::cout << "in.gradmin_mod: " << in.gradmin_mod << std::endl;
 
     for (in.parallel_threads = 4; in.parallel_threads <= 4; in.parallel_threads *= 2){
         for (in.Nbumps = 5; in.Nbumps < 6; ++in.Nbumps){
