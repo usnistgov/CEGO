@@ -111,19 +111,50 @@ void do_minimization(F f, G g) {
     std::cout << "Ncalls: " << Ncalls << std::endl;
 }
 
-int main(){
-
-    //test_bounds();
-    //do_minimization<double>(RosenbrockI<double>, nullptr);
-    //do_minimization<CEGO::numberish>(RosenbrockI<CEGO::numberish>, nullptr);
-
-    Eigen::VectorXd x0(2); x0 << -0.3, 0.5;
-    Eigen::ArrayXd gexact = Rosenbrock_exact_gradient(x0(0), x0(1)); 
-    std::cout << gexact << std::endl;
+/// Minimize the Rosenbrock function with complex step derivatives to build the quasi-exact gradient
+void minimize_Rosenbrock_CSD() {
     
+    // Start and box bounds
+    Eigen::VectorXd x0(2); x0 << -0.3, 0.5;
+    Eigen::VectorXd lbvec(2); lbvec << -1, -1;
+    Eigen::VectorXd ubvec(2); ubvec << 1, 1; 
+
+    // Define functors for function and its gradient
+    CEGO::DoubleObjectiveFunction func = Rosenbrockvec<double>;
+    const std::function<std::complex<double>(CEGO::EVector<std::complex<double>>&) > csdf = Rosenbrockvec<std::complex<double>>;
+    CEGO::DoubleGradientFunction gradcsd = CEGO::ComplexStepGradient(csdf);
+
+    // Check that the right gradient is returned
+    Eigen::ArrayXd gcsd = gradcsd(x0);
+    Eigen::ArrayXd gexact = Rosenbrock_exact_gradient(x0(0), x0(1));
+    double graderror = (gexact - gcsd).cwiseAbs().sum();
+    if (graderror > 1e-13) {
+        throw std::invalid_argument("Did not get the right gradient; error is " + std::to_string(graderror));
+    }
+    
+    auto tic = std::chrono::high_resolution_clock::now();
+    Eigen::VectorXd xsoln; 
+    double F;
+    std::tie(xsoln, F) = CEGO::box_gradient_minimization(func, gradcsd, x0, lbvec, ubvec);
+    auto toc = std::chrono::high_resolution_clock::now();
+    double elap = std::chrono::duration<double>(toc - tic).count();
+    std::cout << elap << std::endl;
+
+    Eigen::VectorXd xsolnexact(2); xsolnexact << 1, 1;
+    double solnerror = (xsoln - xsolnexact).cwiseAbs().sum();
+    if (solnerror > 1e-6) {
+        throw std::invalid_argument("Did not get the right solution; solution is (" + std::to_string(xsoln(0))+","+ std::to_string(xsoln(1)) + "); should be (1,1)");
+    }
+}
+
+void minimize_Rosenbrock_autodiff() {
+    Eigen::VectorXd x0(2); x0 << -0.3, 0.5;
+    Eigen::ArrayXd gexact = Rosenbrock_exact_gradient(x0(0), x0(1));
+    std::cout << gexact << std::endl;
+
     Eigen::VectorXdual x0dual = x0.cast<autodiff::dual>();
     Eigen::VectorXd g30 = autodiff::forward::gradient(Rosenbrockvec<autodiff::dual>, autodiff::wrt(x0dual), autodiff::forward::at(x0dual));
-    Eigen::VectorXd g3 = autodiff::forward::gradient(Rosenbrockvek, autodiff::wrt(x0dual), autodiff::forward::at(x0dual)); 
+    Eigen::VectorXd g3 = autodiff::forward::gradient(Rosenbrockvek, autodiff::wrt(x0dual), autodiff::forward::at(x0dual));
     std::cout << g30.array() - gexact.array() << " should be zero\n";
     std::cout << g3.array() - gexact.array() << " should be zero\n";
 
@@ -133,25 +164,16 @@ int main(){
     const std::function<autodiff::dual(CEGO::EVector<autodiff::dual>&)> adf = Rosenbrockvec<autodiff::dual>;
     CEGO::DoubleGradientFunction grad = CEGO::AutoDiffGradient(adf);
 
-    const std::function<std::complex<double>(CEGO::EVector<std::complex<double>>&) > csdf = Rosenbrockvec<std::complex<double>>;
-    CEGO::DoubleGradientFunction gradcsd = CEGO::ComplexStepGradient(csdf);
-    Eigen::ArrayXd g1 = grad(x0);
-    Eigen::ArrayXd g1csd = gradcsd(x0);
-    CEGO::DoubleGradientFunction gradexact = [](const CEGO::EArray<double>& c) -> CEGO::EArray<double> {
-        return Rosenbrock_exact_gradient(c(0), c(1));
-    };
-   
     Eigen::ArrayXd g31 = autodiff::forward::gradient(Rosenbrockvek1, autodiff::wrt(x0dual), autodiff::forward::at(x0dual));
     Eigen::ArrayXd g32 = autodiff::forward::gradient(Rosenbrockvek2, autodiff::wrt(x0dual), autodiff::forward::at(x0dual));
-    
-    std::cout << g1csd-gexact << " must be zero (CSD)\n";
-    auto tic = std::chrono::high_resolution_clock::now();
-    CEGO::box_gradient_minimization(func, gradexact, x0, lbvec, ubvec);
-    auto toc = std::chrono::high_resolution_clock::now();
-    double elap = std::chrono::duration<double>(toc-tic).count();
-    std::cout << elap << std::endl;
+}
 
-    int rr =  0;
+int main(){
+
+    //test_bounds();
+    //do_minimization<double>(RosenbrockI<double>, nullptr);
+    //do_minimization<CEGO::numberish>(RosenbrockI<CEGO::numberish>, nullptr);
+    minimize_Rosenbrock_CSD();
 }
 #else
 
