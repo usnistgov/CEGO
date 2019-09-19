@@ -28,7 +28,7 @@ script:
   - cmake --build . --config Release
   - ./StornPriceprofiling
   - ./main
-  - ./shaped_inverse_gaussian
+  - NBUMPS=1 ./shaped_inverse_gaussian
 
 notifications:
   email:
