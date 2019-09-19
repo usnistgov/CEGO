@@ -341,16 +341,14 @@ int main() {
     in.root = "shaped-";
     in.Nlayersvec = {1};
     auto Nrepeats = get_env_int("NREPEATS", 1);
-    in.gradmin_mod = get_env_int("GRADMOD", 1000000000);
+    in.Nbumps = get_env_int("NBUMPS", 5);
+    in.gradmin_mod = get_env_int("GRADMOD", 100);
     in.parallel_threads = get_env_int("NTHREADS", 4);
+    std::cout << "Nbumps: " << in.Nbumps << std::endl;
     std::cout << "Nrepeats: " << Nrepeats << std::endl;
     std::cout << "in.gradmin_mod: " << in.gradmin_mod << std::endl;
-    std::cout << "in.parallel_threads: " << in.parallel_threads << std::endl;
-
-    for (in.Nbumps = 5; in.Nbumps < 6; ++in.Nbumps){
-        std::cout << "Nbumps: " << in.Nbumps << std::endl;
-        for (in.i = 0; in.i < Nrepeats; ++in.i) {
-            do_one(in);
-        }
+    std::cout << "in.parallel_threads: " << in.parallel_threads << std::endl;   
+    for (in.i = 0; in.i < Nrepeats; ++in.i) {
+        do_one(in);
     }
 }
