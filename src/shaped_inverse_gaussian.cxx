@@ -170,6 +170,7 @@ struct BumpsInputs{
     std::size_t Nbumps;
     std::vector<std::size_t> Nlayersvec;
     std::size_t i;
+    int gradmin_mod;
 };
 
 void do_one(BumpsInputs &inputs)
@@ -274,7 +275,7 @@ void do_one(BumpsInputs &inputs)
                     //std::cout << "no reduction\n";
                 }
             };
-            if (counter % 100 == 0) {
+            if (counter % inputs.gradmin_mod == 0 && counter > 0) {
                 layers.transform_individuals(minimizer);
             }
 
@@ -316,6 +317,19 @@ void do_one(BumpsInputs &inputs)
     }
 }
 
+int get_env_int(const std::string &var, int def) {
+    try {
+        char *s = std::getenv(var.c_str());
+        if (strlen(s) == 0) {
+            return def;
+        }
+        return std::stoi(s, nullptr);
+    }
+    catch(...) {
+        return def;
+    }
+}
+
 int main() {
     #if defined(PYBIND11)
     py::scoped_interpreter interp{};
@@ -323,10 +337,13 @@ int main() {
     BumpsInputs in;
     in.root = "shaped-";
     in.Nlayersvec = {1};
+    auto Nrepeats = get_env_int("NREPEATS", 1);
+    in.gradmin_mod = get_env_int("GRADMOD", 1000000000);
+
     for (in.parallel_threads = 4; in.parallel_threads <= 4; in.parallel_threads *= 2){
         for (in.Nbumps = 5; in.Nbumps < 6; ++in.Nbumps){
             std::cout << "Nbumps: " << in.Nbumps << std::endl;
-            for (in.i = 0; in.i < 1; ++in.i) {
+            for (in.i = 0; in.i < Nrepeats; ++in.i) {
                 do_one(in);
             }
         }
