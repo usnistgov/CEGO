@@ -37,7 +37,7 @@ function(attach_includes target)
     add_nix_libraries(${target})
   endif()
   if (MSVC)
-      list(APPEND APP_SOURCES "${CMAKE_SOURCE_DIR}/externals/Eigen/debug/msvc/eigen.natvis")
+      target_sources(${target} PRIVATE "${CMAKE_SOURCE_DIR}/externals/Eigen/debug/msvc/eigen.natvis")
   endif()
 endfunction()
 
