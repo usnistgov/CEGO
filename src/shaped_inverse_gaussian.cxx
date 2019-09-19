@@ -103,9 +103,18 @@ public:
     EArray<T> to_realworld(const EArray<T>&x){
         EArray<T> o(x.size());
         for (auto i = 0; i < o.size(); ++i){
-            T lower = static_cast<T>(m_bounds[i].m_lower);
-            T upper = static_cast<T>(m_bounds[i].m_upper);
-            o[i] = lower*(static_cast<T>(1.0) - x[i]) + upper*x[i];
+            if constexpr (std::is_same<T, std::complex<double>>::value) {
+                // If complex<double> type, first cast the numberish bounds to double, then to complex
+                // Otherwise compiler gets confused
+                T lower = static_cast<T>(static_cast<double>(m_bounds[i].m_lower));
+                T upper = static_cast<T>(static_cast<double>(m_bounds[i].m_upper));
+                o[i] = lower * (static_cast<T>(1.0) - x[i]) + upper * x[i];
+            }
+            else {
+                T lower = static_cast<T>(m_bounds[i].m_lower);
+                T upper = static_cast<T>(m_bounds[i].m_upper);
+                o[i] = lower * (static_cast<T>(1.0) - x[i]) + upper * x[i];
+            }
         }
         return o.eval();
     }
