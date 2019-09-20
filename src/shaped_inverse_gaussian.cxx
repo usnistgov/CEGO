@@ -165,13 +165,27 @@ public:
 };
 
 struct BumpsInputs{
-    std::string root;
-    std::size_t parallel_threads;
-    std::size_t Nbumps;
-    std::vector<std::size_t> Nlayersvec;
-    std::size_t i;
-    int gradmin_mod;
+    std::string root = "";
+    std::size_t parallel_threads = 1;
+    std::size_t Nbumps = 4;
+    std::vector<std::size_t> Nlayersvec = { 1 };
+    std::size_t i = 0;
+    std::size_t gradmin_mod = 5;
+    std::size_t Nmax_gradient = 5;
 };
+
+inline void to_json(nlohmann::json& j, const BumpsInputs& f) {
+    j = nlohmann::json{ { "root", f.root },{ "parallel_threads", f.parallel_threads },{ "Nbumps", f.Nbumps },{"i",f.i},{"gradmin_mod",f.gradmin_mod},{"Nmax_gradient",f.Nmax_gradient} };
+}
+
+inline void from_json(const nlohmann::json& j, BumpsInputs& f) {
+    f.root = j.at("root").get<std::string>();
+    f.parallel_threads = j.at("parallel_threads").get<int>();
+    f.Nbumps = j.at("Nbumps").get<int>();
+    f.i = j.at("i").get < std::size_t > ();
+    f.gradmin_mod = j.at("gradmin_mod").get < std::size_t >();
+    f.Nmax_gradient = j.at("Nmax_gradient").get < std::size_t >();
+}
 
 void do_one(BumpsInputs &inputs)
 {
@@ -228,7 +242,7 @@ void do_one(BumpsInputs &inputs)
             layers.do_generation();
 
             // Do a single step of gradient minimization for all individuals
-            auto minimizer = [&layers, &bumps](const CEGO::pIndividual &pind) {
+            auto minimizer = [&layers, &bumps, &inputs](const CEGO::pIndividual &pind) {
                 auto bounds = layers.get_bounds();
                 Eigen::ArrayXd ub(bounds.size()), lb(bounds.size()), xnew(bounds.size());
                 auto i = 0;
@@ -263,7 +277,7 @@ void do_one(BumpsInputs &inputs)
                 auto g0 = g(x0);
                 double F;
                 CEGO::BoxGradientFlags flags;
-                flags.Nmax = 400;
+                flags.Nmax = inputs.Nmax_gradient;
                 flags.VTR = 1e-16;
                 std::tie(xnew, F) = CEGO::box_gradient_minimization(obj, g, x0, lb, ub, flags);
                 if (F < F0) {
@@ -347,10 +361,9 @@ int main() {
     in.Nbumps = get_env_int("NBUMPS", 5);
     in.gradmin_mod = get_env_int("GRADMOD", 100);
     in.parallel_threads = get_env_int("NTHREADS", 4);
-    std::cout << "Nbumps: " << in.Nbumps << std::endl;
-    std::cout << "Nrepeats: " << Nrepeats << std::endl;
-    std::cout << "in.gradmin_mod: " << in.gradmin_mod << std::endl;
-    std::cout << "in.parallel_threads: " << in.parallel_threads << std::endl;   
+    in.Nmax_gradient = get_env_int("NMAX_gradient", 5);
+    nlohmann::json j = in;
+    std::cout << j << std::endl;
     for (in.i = 0; in.i < Nrepeats; ++in.i) {
         do_one(in);
     }

@@ -50,7 +50,7 @@ namespace CEGO {
     you know the analytic gradient (for simple objective functions), or if you can 
     calculate it with automatic differentiation
     */
-    auto gradient_linesearch(DoubleObjectiveFunction& objfunc, DoubleGradientFunction& gradfunc, const Eigen::ArrayXd& x, const Eigen::ArrayXd& lbvec, const Eigen::ArrayXd& ubvec) {
+    auto gradient_linesearch(DoubleObjectiveFunction& objfunc, DoubleGradientFunction& gradfunc, const Eigen::ArrayXd& x, const Eigen::ArrayXd& lbvec, const Eigen::ArrayXd& ubvec, std::size_t Nmax_linesearch) {
         double c = 0.5, tau = 0.5;
         // Evaluate the objective and gradient functions for double arguments
         auto F = objfunc(x);
@@ -60,7 +60,7 @@ namespace CEGO {
         double alpha = std::max(alphaub.maxCoeff(), alphalb.maxCoeff());
         // The termination condition for the reduction in objective function
         double t = c * (g.square()).sum();
-        for (auto j = 0; j < 50; ++j) {
+        for (auto j = 0; j < Nmax_linesearch; ++j) {
             alpha *= tau;
             auto fnew = objfunc((x - alpha * g.array()));
             double diff = F - fnew;
@@ -73,7 +73,8 @@ namespace CEGO {
 
     struct BoxGradientFlags {
         double VTR = 1e-16;
-        int Nmax = 100;
+        std::size_t Nmax = 100;
+        std::size_t Nmax_linesearch = 50;
     };
 
     auto box_gradient_minimization(
@@ -87,7 +88,7 @@ namespace CEGO {
         Eigen::ArrayXd xnew = x;
         double F;
         for (auto counter = 0; counter <= flags.Nmax; ++counter) {
-            std::tie(xnew, F) = gradient_linesearch(funcdouble, gradfunc,  xnew, lbvec, ubvec);
+            std::tie(xnew, F) = gradient_linesearch(funcdouble, gradfunc,  xnew, lbvec, ubvec, flags.Nmax_linesearch);
             if (F < flags.VTR) {
                 return std::make_tuple(xnew, F);
             }
