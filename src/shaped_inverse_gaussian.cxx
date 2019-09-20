@@ -262,7 +262,10 @@ void do_one(BumpsInputs &inputs)
                 );
                 auto g0 = g(x0);
                 double F;
-                std::tie(xnew, F) = CEGO::box_gradient_minimization(obj, g, x0, lb, ub, 5);
+                CEGO::BoxGradientFlags flags;
+                flags.Nmax = 400;
+                flags.VTR = 1e-16;
+                std::tie(xnew, F) = CEGO::box_gradient_minimization(obj, g, x0, lb, ub, flags);
                 if (F < F0) {
                     std::vector<CEGO::numberish> cnew;
                     for (auto i = 0; i < xnew.size(); ++i){

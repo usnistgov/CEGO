@@ -71,18 +71,26 @@ namespace CEGO {
         return std::make_tuple(x, F);
     }
 
+    struct BoxGradientFlags {
+        double VTR = 1e-16;
+        int Nmax = 100;
+    };
+
     auto box_gradient_minimization(
         DoubleObjectiveFunction& funcdouble, 
         DoubleGradientFunction& gradfunc, 
         const Eigen::ArrayXd& x, 
         const Eigen::ArrayXd& lbvec, 
         const Eigen::ArrayXd& ubvec,
-        const int Nmax = 10000) 
+        const BoxGradientFlags &flags = BoxGradientFlags())
     {
         Eigen::ArrayXd xnew = x;
         double F;
-        for (auto counter = 0; counter <= Nmax; ++counter) {
+        for (auto counter = 0; counter <= flags.Nmax; ++counter) {
             std::tie(xnew, F) = gradient_linesearch(funcdouble, gradfunc,  xnew, lbvec, ubvec);
+            if (F < flags.VTR) {
+                return std::make_tuple(xnew, F);
+            }
         }
         return std::make_tuple(xnew, F);
     }
