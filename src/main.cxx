@@ -135,7 +135,10 @@ void minimize_Rosenbrock_CSD() {
     auto tic = std::chrono::high_resolution_clock::now();
     Eigen::VectorXd xsoln; 
     double F;
-    std::tie(xsoln, F) = CEGO::box_gradient_minimization(func, gradcsd, x0, lbvec, ubvec);
+    CEGO::BoxGradientFlags flags;
+    flags.Nmax = 10000;
+    flags.VTR = 1e-14;
+    std::tie(xsoln, F) = CEGO::box_gradient_minimization(func, gradcsd, x0, lbvec, ubvec, flags);
     auto toc = std::chrono::high_resolution_clock::now();
     double elap = std::chrono::duration<double>(toc - tic).count();
     std::cout << elap << std::endl;
