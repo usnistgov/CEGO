@@ -121,7 +121,7 @@ void minimize_Rosenbrock_CSD() {
 
     // Define functors for function and its gradient
     CEGO::DoubleObjectiveFunction func = Rosenbrockvec<double>;
-    const std::function<std::complex<double>(CEGO::EVector<std::complex<double>>&) > csdf = Rosenbrockvec<std::complex<double>>;
+    const std::function<std::complex<double>(CEGO::EArray<std::complex<double>>&) > csdf = Rosenbrockvec<std::complex<double>>;
     CEGO::DoubleGradientFunction gradcsd = CEGO::ComplexStepGradient(csdf);
 
     // Check that the right gradient is returned
