@@ -313,7 +313,7 @@ namespace CEGO {
     template<typename T>
     class NumericalIndividual : public AbstractIndividual {
     private:
-        double m_cost;
+        double m_cost = 1e99;
         std::vector<T> m_c;
         const CostFunction<T> m_f;
     public:

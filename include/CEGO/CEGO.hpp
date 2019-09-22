@@ -249,7 +249,7 @@ namespace CEGO{
             // Iterate backwards through the layers, starting at the N-1 layer, since the 
             // last layer has an infinite age limit, and you cannot age out of the 
             // highest age limit layer
-            for (int ilayer = static_cast<int>(m_layers.size())-2; ilayer >= 0; --ilayer) {
+            for (long ilayer = static_cast<long>(m_layers.size())-2; ilayer >= 0; --ilayer) {
 
                 double age_threshold = static_cast<double>(age_gap*pow(2, ilayer));
                 auto &this_layer = m_layers[ilayer];
