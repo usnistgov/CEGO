@@ -6,11 +6,6 @@
 
 namespace CEGO {
 
-    template <typename T> using EArray = Eigen::Array<T, Eigen::Dynamic, 1, 0, Eigen::Dynamic, 1>;
-    template <typename T> using EVector = Eigen::Matrix<T, Eigen::Dynamic, 1, 0, Eigen::Dynamic, 1>;
-    using DoubleObjectiveFunction = std::function<double(const EArray<double>&)>;
-    using DoubleGradientFunction = std::function<EArray<double>(const EArray<double>&)>;
-
     /**
     A function of a vector of duals is passed into this wrapper; the function must have the signature:
 

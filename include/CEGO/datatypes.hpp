@@ -6,6 +6,11 @@
 
 namespace CEGO {
 
+    template <typename T> using EArray = Eigen::Array<T, Eigen::Dynamic, 1, 0, Eigen::Dynamic, 1>;
+    template <typename T> using EVector = Eigen::Matrix<T, Eigen::Dynamic, 1, 0, Eigen::Dynamic, 1>;
+    using DoubleObjectiveFunction = std::function<double(const EArray<double>&)>;
+    using DoubleGradientFunction = std::function<EArray<double>(const EArray<double>&)>;
+
     inline int double2int(double inval) {
         return std::lround(inval);
     }
@@ -309,6 +314,7 @@ namespace CEGO {
     typedef std::vector<pIndividual > Population;
     /// A typedef for the cost function
     template <typename T> using CostFunction = std::function<T(const AbstractIndividual *)>;
+    using GradientFunction = std::function<EArray<double>(const AbstractIndividual*)>;
 
     template<typename T>
     class NumericalIndividual : public AbstractIndividual {
@@ -331,6 +337,14 @@ namespace CEGO {
         }
         Eigen::ArrayXd get_coeffs_ArrayXd() const override {
             Eigen::ArrayXd o(m_c.size());
+            for (auto i = 0; i < m_c.size(); ++i) {
+                o[i] = m_c[i];
+            }
+            return o;
+        }
+        template <typename TYPE>
+        EArray<TYPE> to_array() const {
+            EArray<TYPE> o(m_c.size());
             for (auto i = 0; i < m_c.size(); ++i) {
                 o[i] = m_c[i];
             }
