@@ -309,7 +309,7 @@ namespace CEGO {
             const RecombinationFlags &flags) = 0;
     };
 
-    
+    template <typename T> using IndividualFactory = std::function<AbstractIndividual* (const std::vector<T>&&)>;
     /// A typedef for a population of individuals
     typedef std::vector<pIndividual > Population;
     /// A typedef for the cost function

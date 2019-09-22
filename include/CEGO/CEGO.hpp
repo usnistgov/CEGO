@@ -64,7 +64,7 @@ namespace CEGO{
 
     /// Generate a random population of individuals
     template<typename T>
-    Population random_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const CostFunction<T> &cost_function) 
+    Population random_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const IndividualFactory<T> &factory)
     {
         auto length_ind = bounds.size();
         auto gen = get_gen();
@@ -84,14 +84,14 @@ namespace CEGO{
                 }
             }
             assert(c.size() == length_ind);
-            out.emplace_back(pIndividual(new NumericalIndividual<T>(std::move(c), cost_function)));
+            out.emplace_back(pIndividual(factory(std::move(c))));
         }
         return out;
     }
 
     /// Generate a population of individuals with the use of Latin-Hypercube sampling
     template<typename T>
-    Population LHS_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const CostFunction<T> &cost_function)
+    Population LHS_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const IndividualFactory<T> &factory)
     {
         // Generate the set of floating parameters in [0,1]
         Eigen::ArrayXXd population = LHS_samples(count, bounds.size());
@@ -117,7 +117,7 @@ namespace CEGO{
                 }
             }
             assert(c.size() == length_ind);
-            out.emplace_back(pIndividual(new NumericalIndividual<T>(std::move(c), cost_function)));
+            out.emplace_back(pIndividual(factory(std::move(c))));
         }
         return out;
     }
@@ -140,7 +140,7 @@ namespace CEGO{
             MutantVector mutants;
             for (auto i = 0; i < Nlayers; ++i) {
                 auto generator = (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
-                for (auto && ind : generator(m_bounds, Npop_size, m_cost_function)) {
+                for (auto && ind : generator(m_bounds, Npop_size, get_individual_factory())) {
                     mutants.emplace_back(std::make_pair(i, std::move(ind)));
                 }
             }
@@ -238,6 +238,22 @@ namespace CEGO{
         GenerationOptions get_generation_mode() {
             return m_generation_flag;
         }
+
+        /// Get the function used to generate the population
+        auto get_generator() {
+            return (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
+        }
+
+        /// Get a factory function to return an individual for a set of coefficients
+        IndividualFactory<T> get_individual_factory() {
+            
+            auto &cost_function = m_cost_function;
+
+            // By default, individuals are "normal", and enhanced with a cost function that takes the individual as argument
+            return [&cost_function](const std::vector<T>&& c){
+                return new NumericalIndividual<T>(std::move(c), cost_function);
+            };
+        }
     
         /** Iterate over the layers and find individuals that are too old for the given layer
          * 
@@ -285,9 +301,9 @@ namespace CEGO{
                     // How many individuals are missing?
                     auto missing_individuals_count = Npop_size - layer.size();
                     // Get the generator function
-                    auto generator = (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
+                    auto generator = get_generator();
                     // Then we pad out the population with new random individuals as needed (they start with an age of zero)
-                    for (auto && ind : generator(m_bounds, missing_individuals_count, m_cost_function)) {
+                    for (auto && ind : generator(m_bounds, missing_individuals_count, get_individual_factory())) {
                         mutants.emplace_back(std::make_pair(i, std::move(ind)));
                     }
                 }
@@ -541,8 +557,8 @@ namespace CEGO{
 
             // Then we pad out the population with new random individuals as needed (they start with an age of zero)
             if (missing_individuals_count > 0) {
-                auto generator = (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
-                Population random_inds = generator(m_bounds, missing_individuals_count, m_cost_function);
+                auto generator = get_generator();
+                Population random_inds = generator(m_bounds, missing_individuals_count, get_individual_factory());
                 std::move(random_inds.begin(), random_inds.end(), std::back_inserter(new_layer));
             }
 
@@ -589,8 +605,8 @@ namespace CEGO{
 
                 // Generate new individuals in serial (fast)
                 MutantVector mutants;
-                auto generator = (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
-                for (auto && ind : generator(m_bounds, Npop_size, m_cost_function)) {
+                auto generator = get_generator();
+                for (auto && ind : generator(m_bounds, Npop_size, get_individual_factory())) {
                     mutants.emplace_back(std::make_pair(0,std::move(ind)));
                 }
                 // Evaluate the individuals in parallel
