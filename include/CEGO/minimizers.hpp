@@ -46,24 +46,35 @@ namespace CEGO {
     calculate it with automatic differentiation
     */
     auto gradient_linesearch(DoubleObjectiveFunction& objfunc, DoubleGradientFunction& gradfunc, const Eigen::ArrayXd& x, const Eigen::ArrayXd& lbvec, const Eigen::ArrayXd& ubvec, std::size_t Nmax_linesearch) {
-        double c = 0.5, tau = 0.5;
+        double c = 0.5, tau = 0.1;
         // Evaluate the objective and gradient functions for double arguments
         auto F = objfunc(x);
         auto g = gradfunc(x);
         // Check upper and lower bounds to determine the largest allowed value for alpha
         Eigen::ArrayXd alphaub = ubvec / g.array(), alphalb = lbvec / g.array();
-        double alpha = std::max(alphaub.maxCoeff(), alphalb.maxCoeff());
+        double alphamax = std::max(alphaub.cwiseAbs().maxCoeff(), alphalb.cwiseAbs().maxCoeff());
+        double alpha = 1e-6;
         // The termination condition for the reduction in objective function
         double t = c * (g.square()).sum();
+        auto Flast = F;
         for (auto j = 0; j < Nmax_linesearch; ++j) {
-            alpha *= tau;
+            if (alpha / tau > alphamax) {
+                return std::make_tuple(0, x, F);
+            }
+            alpha /= tau;
             auto fnew = objfunc((x - alpha * g.array()));
             double diff = F - fnew;
-            if (diff > alpha * t) {
-                return std::make_tuple((x - (alpha * g).array()).eval(), fnew); 
+            
+            if (fnew > Flast) {
+                return std::make_tuple(0, (x - (alpha * g).array()).eval(), fnew);
             }
+            if (diff > alpha * t) {
+                // Achieved the desired reduction in objective function
+                return std::make_tuple(0, (x - (alpha * g).array()).eval(), fnew); 
+            }
+            Flast = fnew;
         }
-        return std::make_tuple(x, F);
+        return std::make_tuple(1, x, F);
     }
 
     struct BoxGradientFlags {
@@ -80,11 +91,12 @@ namespace CEGO {
         const Eigen::ArrayXd& ubvec,
         const BoxGradientFlags &flags = BoxGradientFlags())
     {
+        int code = 0;
         Eigen::ArrayXd xnew = x;
-        double F;
+        double F0 = funcdouble(x), F;
         for (auto counter = 0; counter <= flags.Nmax; ++counter) {
-            std::tie(xnew, F) = gradient_linesearch(funcdouble, gradfunc,  xnew, lbvec, ubvec, flags.Nmax_linesearch);
-            if (F < flags.VTR) {
+            std::tie(code, xnew, F) = gradient_linesearch(funcdouble, gradfunc,  xnew, lbvec, ubvec, flags.Nmax_linesearch);
+            if (F < flags.VTR || (code != 0 && counter == 0)) {
                 return std::make_tuple(xnew, F);
             }
         }

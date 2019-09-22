@@ -52,7 +52,7 @@ namespace CEGO{
 
 template<typename T, class RNG, typename TYPE>
 pIndividual DE1bin(const pIndividual &i0, const pIndividual &i1, const pIndividual &i2, const pIndividual &i3,
-                   RNG &gen, const CostFunction<TYPE> &m_function, double F = 0.5, double CR = 0.9) 
+                   RNG &gen, const IndividualFactory<TYPE> &factory, double F = 0.5, double CR = 0.9) 
 {   
     // Copy of the coefficients for the base individual
     auto c0 = static_cast<T*>(i0.get())->get_coefficients();
@@ -73,12 +73,12 @@ pIndividual DE1bin(const pIndividual &i0, const pIndividual &i1, const pIndividu
         else { // Otherwise, use the old parameter from i0 
         }
     }
-    return pIndividual(new T(c0, m_function));
+    return pIndividual(factory(std::move(c0)));
 };
 
 template<typename T, class RNG, typename TYPE>
 pIndividual DE1exp(const pIndividual &i0, const pIndividual &i1, const pIndividual &i2, const pIndividual &i3,
-                   RNG &gen, const CostFunction<TYPE> &m_function, double F = 1.0, double CR = 0.9)
+                   RNG &gen, const IndividualFactory<TYPE> &factory, double F = 1.0, double CR = 0.9)
 {
     // Copy of the coefficients
     auto c0 = static_cast<T*>(i0.get())->get_coefficients();
@@ -95,7 +95,7 @@ pIndividual DE1exp(const pIndividual &i0, const pIndividual &i1, const pIndividu
         c0[n] = cm[n]; // Use the value from the mutant
         n = (n + 1) % (Ncoeff - 1); // Bump the index, and if you go above Ncoeff, go back to zero
     }
-    return pIndividual(new T(c0, m_function));
+    return pIndividual(factory(std::move(c0)));
 };
 
 /// Flags for differential evolution.  If changed, make sure to modify the to/from_json functions below
@@ -124,7 +124,7 @@ template<typename T>
 Population differential_evolution(const Population &this_layer, 
                                   const Population &older_layer, 
                                   const std::vector<Bound> &bounds, 
-                                  const CostFunction<T> &cost_function, 
+                                  const IndividualFactory<T> &factory, 
                                   const DifferentialEvolutionFlags &flags)
 {
     Population outputs;
@@ -178,7 +178,7 @@ Population differential_evolution(const Population &this_layer,
             }
         }
         
-        auto other = DE1bin<NumericalIndividual<T>>(this_layer[i], candidates[0], candidates[1], candidates[2], gen, cost_function, F, flags.CR);
+        auto other = DE1bin<NumericalIndividual<T>>(this_layer[i], candidates[0], candidates[1], candidates[2], gen, factory, F, flags.CR);
         // Impose the bounds if bounds are provided
         if (!bounds.empty()) {
             std::vector<T> cnew;
@@ -190,7 +190,7 @@ Population differential_evolution(const Population &this_layer,
                 T cconstrained = static_cast<T>(bounds[i].reflect_then_random_out_of_bounds(gen,c[i]));
                 cnew.push_back(cconstrained);
             }
-            other.reset(new NumericalIndividual<T>(cnew, cost_function));
+            other.reset(factory(std::move(cnew)));
         }
         outputs.emplace_back(std::move(other));
         // Set the age to the oldest age of any of the candidates

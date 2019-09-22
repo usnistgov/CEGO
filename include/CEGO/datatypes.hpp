@@ -316,9 +316,12 @@ namespace CEGO {
     template <typename T> using CostFunction = std::function<T(const AbstractIndividual *)>;
     using GradientFunction = std::function<EArray<double>(const AbstractIndividual*)>;
 
+    using DoubleCostFunction = std::function<double(const EArray<double>&)>;
+    using DoubleGradientFunction = std::function<EArray<double>(const EArray<double>&)>;
+
     template<typename T>
     class NumericalIndividual : public AbstractIndividual {
-    private:
+    protected:
         double m_cost = 1e99;
         std::vector<T> m_c;
         const CostFunction<T> m_f;
@@ -412,7 +415,31 @@ namespace CEGO {
             return pIndividual(newone);
         }
     };
-    
+
+    template<typename TYPE>
+    class GradientIndividual : public NumericalIndividual<TYPE> {
+    public:
+        DoubleCostFunction m_double_cost_function;
+        DoubleGradientFunction m_double_gradient_function;
+    public:
+        GradientIndividual(const std::vector<TYPE>&& c, const CostFunction<TYPE>& f) : NumericalIndividual<TYPE>(c,f) {}; 
+        GradientIndividual(const std::vector<TYPE>& c, const CostFunction<TYPE>& f) : NumericalIndividual<TYPE>(c, f) {};
+        double cost(const EArray<double>& c) const {
+            return m_double_cost_function(c);
+        }
+        EArray<double> gradient(const EArray<double>&c) const { 
+            return m_double_gradient_function(c);
+        };
+        virtual pIndividual copy() const override {
+            auto* newone = new GradientIndividual<TYPE>(m_c, m_f);
+            newone->m_double_cost_function = m_double_cost_function;
+            newone->m_double_gradient_function = m_double_gradient_function;
+            newone->set_age(age());
+            newone->set_needs_evaluation(needs_evaluation());
+            newone->set_cost(m_cost);
+            return pIndividual(newone);
+        }
+    };
 
 } /* namespace CEGO*/
 #endif

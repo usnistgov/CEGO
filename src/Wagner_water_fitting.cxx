@@ -9,13 +9,11 @@
 
 std::atomic_size_t Ncalls(0);
 
-template <typename T> using EArray = Eigen::Array<T, Eigen::Dynamic, 1>;
-
 constexpr double Tt = 273.16;
 constexpr double Tc = 647.096;
 
 const std::vector<double> b = { 1.99274064, 1.09965342, -0.510839303, -1.75493479, -45.5170352, -6.746944503e5 };
-const std::vector<double> c = { 1 / 3, 2 / 3, 5 / 3, 16 / 3, 43 / 3, 110 / 3 };
+const std::vector<double> c = { 1.0 / 3, 2.0 / 3, 5.0 / 3, 16.0 / 3, 43.0/ 3, 110.0/ 3 };
 
 template <class T, class... Ts> struct is_any : std::disjunction<std::is_same<T, Ts>...> {};
 
@@ -28,8 +26,8 @@ auto evaluate_RHS(const T &theta, const B &b, const C &c) { // theta = 1-T/Tc
     return o;
 }
 
-auto evaluate_RHS(const EArray<double> &theta, const EArray<std::complex<double>> &b, const EArray<std::complex<double>> &c) { // theta = 1-T/Tc
-    EArray<std::complex<double>> o = 1.0 + 0*theta;
+auto evaluate_RHS(const CEGO::EArray<double> &theta, const CEGO::EArray<std::complex<double>> &b, const CEGO::EArray<std::complex<double>> &c) { // theta = 1-T/Tc
+    CEGO::EArray<std::complex<double>> o = 1.0 + 0*theta;
     for (auto i = 0; i < b.size(); ++i) {
         o += b[i] * theta.pow(c[i]);
     }
@@ -57,8 +55,7 @@ auto objective(const Coeffs& coeffs, const Theta &theta, const Yval &yval) {
 
 template <typename Theta, typename Yval>
 auto objective(const CEGO::AbstractIndividual* pind, const Theta& theta, const Yval& yval) {
-    const std::vector<CEGO::numberish>& coeffs = static_cast<const CEGO::NumericalIndividual<CEGO::numberish>*>(pind)->get_coefficients();
-    return objective(coeffs, theta, yval);
+    return objective(pind->get_coeffs_ArrayXd(), theta, yval);
 };
 
 struct Inputs{
@@ -102,8 +99,8 @@ void do_one(Inputs& inputs)
 {
     std::srand((unsigned int)time(0));
 
-    EArray<double> theta = 1 - EArray<double>::LinSpaced(1000, Tt, Tc) / Tc;
-    EArray<double> yval = evaluate_RHS(theta, b, c);
+    const CEGO::EArray<double> theta = 1 - CEGO::EArray<double>::LinSpaced(1000, Tt, Tc) / Tc;
+    const CEGO::EArray<double> yval = evaluate_RHS(theta, b, c);
 
     // Construct the bounds
     std::vector<CEGO::Bound> bounds;
@@ -117,13 +114,16 @@ void do_one(Inputs& inputs)
     }
 
     CEGO::CostFunction<CEGO::numberish> cost_wrapper = [&theta, &yval](const CEGO::AbstractIndividual* pind) {return objective(pind, theta, yval); };
-    auto Npop_size = 15*bounds.size();
-    auto Nlayers = 1;
+    auto Npop_size = 10*bounds.size();
+    auto Nlayers = 3;
     auto layers = CEGO::Layers<CEGO::numberish>(cost_wrapper, bounds.size(), Npop_size, Nlayers, 5);
     layers.parallel = (inputs.parallel_threads > 1);
     layers.parallel_threads = inputs.parallel_threads;
     layers.set_builtin_evolver(CEGO::BuiltinEvolvers::differential_evolution);
     layers.set_bounds(bounds);
+    auto f = [&theta, &yval](const CEGO::EArray<double>& c) {return objective(c, theta, yval); };
+    auto f2 = [&theta, &yval](const CEGO::EArray<std::complex< double >>& c) {return objective(c, theta, yval); };
+    layers.add_gradient(f, f2);
 
     auto flags = layers.get_evolver_flags();
     flags["Nelite"] = 3;
@@ -139,59 +139,8 @@ void do_one(Inputs& inputs)
     for (auto counter = 0; counter < 5000; ++counter) {
         layers.do_generation();
 
-        // Do a single step of gradient minimization for all individuals
-        auto minimizer = [&layers, &theta, &yval, &inputs](const CEGO::pIndividual &pind) {
-            auto bounds = layers.get_bounds();
-            Eigen::ArrayXd ub(bounds.size()), lb(bounds.size()), xnew(bounds.size());
-            auto i = 0;
-            for (auto& b : layers.get_bounds()) {
-                ub(i) = b.m_upper;
-                lb(i) = b.m_lower;
-                i++;
-            }
-            // Store current values
-            auto current_cost = pind->get_cost();
-
-            auto ind = static_cast<CEGO::NumericalIndividual<CEGO::numberish>*>(pind.get());
-            const std::vector<CEGO::numberish>& c = ind->get_coefficients();
-            Eigen::ArrayXd x0(c.size());
-            for (auto i = 0; i < c.size(); ++i) {
-                x0[i] = c[i];
-            }
-
-            // Try to minimize with gradient
-            //
-            // The objective function to be minimized
-            CEGO::DoubleObjectiveFunction obj = [&layers, &theta, &yval](const CEGO::EArray<double>& c) -> double {
-                return objective(c, theta, yval); 
-            };
-            auto F0 = obj(x0);
-            // The gradient function used to do gradient optimization
-            CEGO::DoubleGradientFunction g = CEGO::ComplexStepGradient(
-                [&layers, &theta, &yval](const CEGO::EArray<std::complex<double>>& c) -> std::complex<double>{
-                    return objective(c, theta, yval);
-                }
-            );
-            auto g0 = g(x0);
-            double F;
-            CEGO::BoxGradientFlags flags;
-            flags.Nmax = inputs.Nmax_gradient;
-            flags.VTR = 1e-16;
-            std::tie(xnew, F) = CEGO::box_gradient_minimization(obj, g, x0, lb, ub, flags);
-            if (F < F0) {
-                std::vector<CEGO::numberish> cnew;
-                for (auto i = 0; i < xnew.size(); ++i){
-                    cnew.push_back(xnew(i));
-                }
-                ind->set_coefficients(cnew);
-                ind->calc_cost();
-            }
-            else {
-                //std::cout << "no reduction\n";
-            }
-        };
         if (counter % inputs.gradmin_mod == 0 && counter > 0) {
-            layers.transform_individuals(minimizer);
+            layers.gradient_minimizer();
         }
 
         // Store the best objective function in each layer
@@ -208,7 +157,7 @@ void do_one(Inputs& inputs)
         best_cost = std::get<0>(best_layer); best_costs.push_back(best_cost);
         if (counter % 50 == 0) {
             std::cout << counter << ": best: " << best_cost << "\n ";
-            //std::cout << bumps.to_realworld(best_coeffs//)-bumps.c0 << "\n ";// << CEGO::vec2string(bumps.c0) << "\n";
+            std::cout << CEGO::vec2string(best_coeffs) << "\n";
         }
         if (best_cost < VTR){ break; }
     }
@@ -224,7 +173,7 @@ int main() {
     in.Nlayersvec = {1};
     auto Nrepeats = get_env_int("NREPEATS", 1);
     in.gradmin_mod = get_env_int("GRADMOD", 100);
-    in.parallel_threads = get_env_int("NTHREADS", 4);
+    in.parallel_threads = get_env_int("NTHREADS", 5);
     in.Nmax_gradient = get_env_int("NMAX_gradient", 5);
     nlohmann::json j = in;
     std::cout << j << std::endl;

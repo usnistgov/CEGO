@@ -16,7 +16,7 @@ namespace CEGO {
         virtual Population evolve_layer(const std::vector<Population> &layers, 
             const std::size_t ilayer, 
             const std::vector<Bound> &bounds, 
-            const CostFunction<TYPE> &cost_function) const = 0;
+            const IndividualFactory<TYPE> &) const = 0;
         /// Destructor
         virtual ~AbstractEvolver() {};
         /// Set the flags in the derived class by passing a JSON dict
@@ -34,13 +34,13 @@ namespace CEGO {
             const std::vector<Population> &pop_layers, 
             const std::size_t ilayer, 
             const std::vector<Bound> &bounds, 
-            const CostFunction<TYPE> &cost_function) const {
+            const IndividualFactory<TYPE> &factory) const {
             Population empty;
             return differential_evolution<TYPE>(
                 pop_layers[ilayer],
                 (ilayer > 0 ? pop_layers[ilayer - 1] : empty),  // older layer (if i > 0)
                 bounds,
-                cost_function,
+                factory,
                 m_flags);
         }
         /// Set the flags as a JSON dict

@@ -163,8 +163,10 @@ namespace CEGO{
         std::function<FilterOptions(const Result &)> m_filter_function; 
         std::unique_ptr<AbstractEvolver<T> > m_evolver; ///< The functor that is to be used to evolve a layer
         std::vector<Bound> m_bounds;
-        GenerationOptions m_generation_flag = GenerationOptions::random;
-        CostFunction<T> m_cost_function;
+        GenerationOptions m_generation_flag = GenerationOptions::LHS;
+        CostFunction<T> m_cost_function; ///< Individual<T> -> cost
+        DoubleCostFunction m_double_cost_function;
+        DoubleGradientFunction m_double_gradient_function;
         std::size_t m_Nelite = 2;
     public:
         
@@ -185,6 +187,21 @@ namespace CEGO{
         /// Constructor into which is passed a CostFunction and information about the layers
         Layers(CostFunction<T> &function, std::size_t Nind_size, std::size_t Npop_size, std::size_t Nlayers, std::size_t age_gap = 5) 
             : Nind_size(Nind_size), Npop_size(Npop_size), Nlayers(Nlayers), age_gap(age_gap), m_cost_function(function){ };
+
+        /// Add gradient function to the class, taking in doubles, returning double
+        template <typename Function, typename Function2>
+        void add_gradient(const Function& f, const Function2&f2) {
+
+            m_double_cost_function = [&f](const CEGO::EArray<double>& c) -> double {
+                return f(c);
+            };
+            // The gradient function that will be used to do gradient optimization
+            m_double_gradient_function = CEGO::ComplexStepGradient(
+                [&f2](const CEGO::EArray<std::complex<double>>& c) {
+                    return f2(c);
+                }
+            );
+        }
 
         /// Specify the logging scheme that is to be employed
         void set_logging_scheme(LoggingScheme scheme){ m_log_scheme = scheme; }
@@ -225,7 +242,7 @@ namespace CEGO{
         }
 
         /// Get the cost function that is being used currently
-        const CostFunction<T> &get_cost_function() {
+        const CostFunction<T> get_cost_function() {
             return m_cost_function;
         }
 
@@ -248,11 +265,28 @@ namespace CEGO{
         IndividualFactory<T> get_individual_factory() {
             
             auto &cost_function = m_cost_function;
+            if (cost_function == nullptr) {
+                throw std::bad_function_call();
+            }
 
             // By default, individuals are "normal", and enhanced with a cost function that takes the individual as argument
-            return [&cost_function](const std::vector<T>&& c){
-                return new NumericalIndividual<T>(std::move(c), cost_function);
-            };
+            if (m_double_cost_function == nullptr && m_double_gradient_function == nullptr) {
+                return [&cost_function](const std::vector<T>&& c) {
+                    return new NumericalIndividual<T>(std::move(c), cost_function);
+                };
+            }
+            else {
+                auto& double_cost_function = m_double_cost_function;
+                auto& double_gradient_function = m_double_gradient_function;
+
+                // Upgraded individual that also implements gradient function
+                return [&cost_function, &double_cost_function, &double_gradient_function](const std::vector<T>&& c) {
+                    auto *i = new GradientIndividual<T>(std::move(c), cost_function);
+                    i->m_double_cost_function = double_cost_function;
+                    i->m_double_gradient_function = double_gradient_function;
+                    return i;
+                };
+            }
         }
     
         /** Iterate over the layers and find individuals that are too old for the given layer
@@ -507,7 +541,7 @@ namespace CEGO{
             // In serial, generate the mutants; generation of the mutants 
             // is very fast.  Store all mutants in a flat vector with the index of the layer
             for (auto i = 0; i < m_layers.size(); ++i) {
-                for (auto &&el : m_evolver->evolve_layer(m_layers, i, get_bounds(), get_cost_function())) {
+                for (auto &&el : m_evolver->evolve_layer(m_layers, i, get_bounds(), get_individual_factory())) {
                     mutants.emplace_back(std::make_tuple(i, std::move(el)));
                 }
             }
@@ -538,7 +572,7 @@ namespace CEGO{
         void evolve_layer(std::size_t i) {
 
             // Evolve the layer (elements are unevaluated)
-            auto new_layer = m_evolver->evolve_layer(m_layers, i, get_bounds(), get_cost_function());
+            auto new_layer = m_evolver->evolve_layer(m_layers, i, get_bounds(), get_individual_factory());
 
             for (auto j = 0; j < new_layer.size(); ++j) {
                 evaluate_ind(new_layer[j]);
@@ -644,6 +678,64 @@ namespace CEGO{
             }
             return out;
         };
+
+        // Do gradient minimization for all individuals
+        void gradient_minimizer() {
+
+            // The bounds are universal, the same for all individuals
+            auto bounds = get_bounds();
+            Eigen::ArrayXd ub(bounds.size()), lb(bounds.size()), xnew(bounds.size());
+            auto i = 0;
+            for (auto& b : bounds) {
+                ub(i) = b.m_upper;
+                lb(i) = b.m_lower;
+                i++;
+            }
+
+            auto minimizer = [&ub, &lb](const CEGO::pIndividual& pind) {
+
+                // Dynamically cast to a class with the appropriate methods
+                CEGO::GradientIndividual<T>* ind = dynamic_cast<CEGO::GradientIndividual<T>*>(pind.get());
+                if (ind == nullptr) {
+                    throw std::bad_cast();
+                }
+
+                // The objective function to be minimized (Array<double> -> double)
+                CEGO::DoubleObjectiveFunction obj = [&ind](const EArray<double>& c)-> double { return ind->cost(c); };
+                // The gradient function used to do gradient optimization (Array<double> -> Array<double>)
+                CEGO::DoubleGradientFunction g = [&ind](const EArray<double>& c)->EArray<double> { return ind->gradient(c); };
+                
+                // Store current values
+                Eigen::ArrayXd x0 = ind->to_array<double>();
+                auto F0 = ind->get_cost();
+                
+                // Configuration of the gradient minimizer
+                CEGO::BoxGradientFlags flags;
+                flags.Nmax = 30; // How many steps to take
+                flags.VTR = F0*0.5; // If we get to this level, gradient step is accepted
+
+                // Run the minimization
+                Eigen::ArrayXd xnew;
+                double F; 
+                std::tie(xnew, F) = CEGO::box_gradient_minimization(obj, g, x0, lb, ub, flags);
+
+                if (F < F0) {
+                    // We reduced the cost function, yay!
+                    std::vector<CEGO::numberish> cnew;
+                    for (auto i = 0; i < xnew.size(); ++i) {
+                        cnew.push_back(xnew(i));
+                    }
+                    ind->set_coefficients(cnew);
+                    ind->calc_cost();
+                    //std::cout << F / F0 << std::endl;
+                }
+                else {
+                    //std::cout << "no reduction\n";
+                }
+            };
+            transform_individuals(minimizer);
+        };
+
         // Get the layer with the individual with the lowest (best) cost
         std::tuple<double, const std::vector<T> > get_best() {
             auto B = get_best_per_layer();
