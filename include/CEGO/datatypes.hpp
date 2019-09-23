@@ -356,7 +356,7 @@ namespace CEGO {
             return o;
         }
         template <typename TYPE>
-        EArray<TYPE> to_array() const {
+        auto get_coeff_array() const {
             EArray<TYPE> o(m_c.size());
             for (auto i = 0; i < m_c.size(); ++i) {
                 o[i] = m_c[i];
