@@ -702,7 +702,7 @@ namespace CEGO{
                 CEGO::DoubleGradientFunction g = [&ind](const EArray<double>& c)->EArray<double> { return ind->gradient(c); };
                 
                 // Store current values
-                EArray<double> x0 = ind->get_coeff_array<double>();
+                EArray<double> x0 = ind->template get_coeff_array<double>(); // https://stackoverflow.com/a/3786481
                 auto F0 = ind->get_cost();
                 
                 // Configuration of the gradient minimizer
