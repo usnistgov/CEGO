@@ -4,6 +4,8 @@
 #include <autodiff/forward.hpp>
 #include <autodiff/forward/eigen.hpp>
 
+#include "CEGO/datatypes.hpp"
+
 namespace CEGO {
 
     /**

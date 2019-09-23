@@ -1,5 +1,4 @@
-#ifndef CEGO_DATATYPES_H
-#define CEGO_DATATYPES_H
+#pragma once
 
 #include <functional>
 #include "CEGO/CEGO.hpp"
@@ -453,4 +452,3 @@ namespace CEGO {
     };
 
 } /* namespace CEGO*/
-#endif
