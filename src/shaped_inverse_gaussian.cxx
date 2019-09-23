@@ -226,6 +226,9 @@ void do_one(BumpsInputs &inputs)
         layers.parallel_threads = inputs.parallel_threads;
         layers.set_builtin_evolver(CEGO::BuiltinEvolvers::differential_evolution);
         layers.set_bounds(nbounds);
+        auto f = [&bumps](const CEGO::EArray<double>& c)->double { return bumps.objective(c); };
+        auto f2 = [&bumps](const CEGO::EArray<std::complex<double>>& c)->std::complex<double> { return bumps.objective(c); };
+        layers.add_gradient(f, f2);
 
         auto flags = layers.get_evolver_flags();
         flags["Nelite"] = 1;
@@ -241,59 +244,8 @@ void do_one(BumpsInputs &inputs)
         for (auto counter = 0; counter < 5000; ++counter) {
             layers.do_generation();
 
-            // Do a single step of gradient minimization for all individuals
-            auto minimizer = [&layers, &bumps, &inputs](const CEGO::pIndividual &pind) {
-                auto bounds = layers.get_bounds();
-                Eigen::ArrayXd ub(bounds.size()), lb(bounds.size()), xnew(bounds.size());
-                auto i = 0;
-                for (auto& b : layers.get_bounds()) {
-                    ub(i) = b.m_upper;
-                    lb(i) = b.m_lower;
-                    i++;
-                }
-                // Store current values
-                auto current_cost = pind->get_cost();
-
-                auto ind = static_cast<CEGO::NumericalIndividual<CEGO::numberish>*>(pind.get());
-                const std::vector<CEGO::numberish>& c = ind->get_coefficients();
-                Eigen::ArrayXd x0(c.size());
-                for (auto i = 0; i < c.size(); ++i) {
-                    x0[i] = c[i];
-                }
-
-                // Try to minimize with gradient
-                //
-                // The objective function to be minimized
-                CEGO::DoubleObjectiveFunction obj = [&layers, &bumps](const CEGO::EArray<double>& c) -> double {
-                    return bumps.objective(c);
-                };
-                auto F0 = obj(x0);
-                // The gradient function that will be used to do gradient optimization
-                CEGO::DoubleGradientFunction g = CEGO::ComplexStepGradient(
-                    [&layers, &bumps](const CEGO::EArray<std::complex<double>>& c) {
-                    return bumps.objective(c);
-                    }
-                );
-                auto g0 = g(x0);
-                double F;
-                CEGO::BoxGradientFlags flags;
-                flags.Nmax = inputs.Nmax_gradient;
-                flags.VTR = 1e-16;
-                std::tie(xnew, F) = CEGO::box_gradient_minimization(obj, g, x0, lb, ub, flags);
-                if (F < F0) {
-                    std::vector<CEGO::numberish> cnew;
-                    for (auto i = 0; i < xnew.size(); ++i){
-                        cnew.push_back(xnew(i));
-                    }
-                    ind->set_coefficients(cnew);
-                    ind->calc_cost();
-                }
-                else {
-                    //std::cout << "no reduction\n";
-                }
-            };
             if (counter % inputs.gradmin_mod == 0 && counter > 0) {
-                layers.transform_individuals(minimizer);
+                layers.gradient_minimizer();
             }
 
             // Store the best objective function in each layer
