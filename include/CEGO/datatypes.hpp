@@ -428,7 +428,7 @@ namespace CEGO {
 
     template<typename TYPE>
     class GradientIndividual : public NumericalIndividual<TYPE> {
-    public:
+    protected:
         DoubleCostFunction m_double_cost_function;
         DoubleGradientFunction m_double_gradient_function;
     public:
@@ -452,7 +452,7 @@ namespace CEGO {
             return m_double_gradient_function(c);
         };
         pIndividual copy() const override {
-            auto* newone = new GradientIndividual<TYPE>(m_c, m_f, m_double_cost_function, m_double_gradient_function);
+            GradientIndividual<TYPE>* newone = new GradientIndividual<TYPE>(m_c, m_f, m_double_cost_function, m_double_gradient_function);
             newone->set_age(age());
             newone->set_needs_evaluation(needs_evaluation());
             newone->set_cost(m_cost);
