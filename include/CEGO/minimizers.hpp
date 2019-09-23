@@ -51,10 +51,11 @@ namespace CEGO {
         auto F = objfunc(x);
         auto g = gradfunc(x);
         // Check upper and lower bounds to determine the largest allowed value for alpha
-        // Go in direction of the gradient until hitting the upper and lower bounds.  The most 
-        // restrictive (smallest) value of alpha is the maximum step size available
+        // Go in direction of the gradient until hitting the upper and lower bounds.  The least 
+        // positive value of alpha is the maximum step size available.  Large negative values are
+        // no problem, since we are going in the opposite direction
         Eigen::ArrayXd alphaub = (x-ubvec) / g.array(), alphalb = (x-lbvec) / g.array();
-        double alphamax = std::min(alphaub.cwiseAbs().minCoeff(), alphalb.cwiseAbs().minCoeff());
+        double alphamax = std::min(smallest_positive(alphaub), smallest_positive(alphalb));
         double alpha = alphamax;
         // The termination condition for the reduction in objective function
         double t = c * (g.square()).sum();

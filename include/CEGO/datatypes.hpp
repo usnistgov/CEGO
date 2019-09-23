@@ -11,6 +11,17 @@ namespace CEGO {
     using DoubleObjectiveFunction = std::function<double(const EArray<double>&)>;
     using DoubleGradientFunction = std::function<EArray<double>(const EArray<double>&)>;
 
+    template <typename T>
+    T smallest_positive(const EArray<T>& c) {
+        T val = std::numeric_limits<T>::max();
+        for (auto i = 0; i < c.size(); ++i) {
+            if ((c[i]) < val && c[i] > 0) {
+                val = c[i];
+            }
+        }
+        return val;
+    };
+
     inline int double2int(double inval) {
         return std::lround(inval);
     }
