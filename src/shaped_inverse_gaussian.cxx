@@ -241,7 +241,7 @@ void do_one(BumpsInputs &inputs)
         std::vector<std::vector<double> > objs;
         double VTR = 1e-16, best_cost = 999999.0;
         auto startTime = std::chrono::system_clock::now();
-        for (auto counter = 0; counter < 5000; ++counter) {
+        for (auto counter = 0; counter < 50000; ++counter) {
             layers.do_generation();
 
             if (counter % inputs.gradmin_mod == 0 && counter > 0) {
@@ -308,11 +308,11 @@ int main() {
     #endif
     BumpsInputs in;
     in.root = "shaped-";
-    in.Nlayersvec = {1};
+    in.Nlayersvec = {3};
     auto Nrepeats = get_env_int("NREPEATS", 1);
     in.Nbumps = get_env_int("NBUMPS", 5);
     in.gradmin_mod = get_env_int("GRADMOD", 100);
-    in.parallel_threads = get_env_int("NTHREADS", 4);
+    in.parallel_threads = get_env_int("NTHREADS", 6);
     in.Nmax_gradient = get_env_int("NMAX_gradient", 5);
     nlohmann::json j = in;
     std::cout << j << std::endl;
