@@ -187,7 +187,7 @@ inline void from_json(const nlohmann::json& j, BumpsInputs& f) {
     f.Nmax_gradient = j.at("Nmax_gradient").get < std::size_t >();
 }
 
-void do_one(BumpsInputs &inputs)
+bool do_one(BumpsInputs &inputs)
 {
     std::srand((unsigned int)time(0));
 
@@ -264,7 +264,7 @@ void do_one(BumpsInputs &inputs)
                 std::cout << counter << ": best: " << best_cost << "\n ";
                 //std::cout << bumps.to_realworld(best_coeffs//)-bumps.c0 << "\n ";// << CEGO::vec2string(bumps.c0) << "\n";
             }
-            if (best_cost < VTR){ break; }
+            if (best_cost < VTR){ return true; }
         }
         auto endTime = std::chrono::system_clock::now();
         double elap = std::chrono::duration<double>(endTime - startTime).count();
@@ -284,6 +284,7 @@ void do_one(BumpsInputs &inputs)
         std::cout << bumps.yb0 << std::endl;*/
         std::cout << "NFE:" << Ncalls << std::endl;
     }
+    return 0;
 }
 
 int get_env_int(const std::string &var, int def) {
@@ -309,14 +310,16 @@ int main() {
     BumpsInputs in;
     in.root = "shaped-";
     in.Nlayersvec = {3};
-    auto Nrepeats = get_env_int("NREPEATS", 1);
-    in.Nbumps = get_env_int("NBUMPS", 5);
+    auto Nrepeats = get_env_int("NREPEATS", 10);
+    in.Nbumps = get_env_int("NBUMPS", 1);
     in.gradmin_mod = get_env_int("GRADMOD", 100);
     in.parallel_threads = get_env_int("NTHREADS", 6);
     in.Nmax_gradient = get_env_int("NMAX_gradient", 5);
     nlohmann::json j = in;
     std::cout << j << std::endl;
+    int good_counter = 0;
     for (in.i = 0; in.i < Nrepeats; ++in.i) {
-        do_one(in);
+        good_counter += do_one(in);
     }
+    std::cout << "Success: " << good_counter << "/" << Nrepeats << std::endl;
 }
