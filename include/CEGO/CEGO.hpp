@@ -280,10 +280,7 @@ namespace CEGO{
 
                 // Upgraded individual that also implements gradient function
                 return [&cost_function, &double_cost_function, &double_gradient_function](const std::vector<T>&& c) {
-                    auto *i = new GradientIndividual<T>(std::move(c), cost_function);
-                    i->m_double_cost_function = double_cost_function;
-                    i->m_double_gradient_function = double_gradient_function;
-                    return i;
+                    return new GradientIndividual<T>(std::move(c), cost_function, double_cost_function, double_gradient_function);
                 };
             }
         }

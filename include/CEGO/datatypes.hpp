@@ -432,18 +432,27 @@ namespace CEGO {
         DoubleCostFunction m_double_cost_function;
         DoubleGradientFunction m_double_gradient_function;
     public:
-        GradientIndividual(const std::vector<TYPE>&& c, const CostFunction<TYPE>& f) : NumericalIndividual<TYPE>(c,f) {}; 
-        GradientIndividual(const std::vector<TYPE>& c, const CostFunction<TYPE>& f) : NumericalIndividual<TYPE>(c, f) {};
+        GradientIndividual(
+            const std::vector<TYPE>&& c, 
+            const CostFunction<TYPE>& f, 
+            const DoubleCostFunction &double_cost_function, 
+            const DoubleGradientFunction &double_gradient_function)
+            : NumericalIndividual<TYPE>(c,f), m_double_cost_function(double_cost_function), m_double_gradient_function(double_gradient_function)
+        {}; 
+        GradientIndividual(
+            const std::vector<TYPE>& c,
+            const CostFunction<TYPE>& f,
+            const DoubleCostFunction& double_cost_function,
+            const DoubleGradientFunction& double_gradient_function
+        ) : NumericalIndividual<TYPE>(c, f), m_double_cost_function(double_cost_function), m_double_gradient_function(double_gradient_function) {};
         double cost(const EArray<double>& c) const {
             return m_double_cost_function(c);
         }
         EArray<double> gradient(const EArray<double>&c) const { 
             return m_double_gradient_function(c);
         };
-        virtual pIndividual copy() const override {
-            auto* newone = new GradientIndividual<TYPE>(m_c, m_f);
-            newone->m_double_cost_function = m_double_cost_function;
-            newone->m_double_gradient_function = m_double_gradient_function;
+        pIndividual copy() const override {
+            auto* newone = new GradientIndividual<TYPE>(m_c, m_f, m_double_cost_function, m_double_gradient_function);
             newone->set_age(age());
             newone->set_needs_evaluation(needs_evaluation());
             newone->set_cost(m_cost);
