@@ -261,14 +261,14 @@ bool do_one(BumpsInputs &inputs)
             auto best_coeffs = std::get<1>(best_layer);
             best_cost = std::get<0>(best_layer); best_costs.push_back(best_cost);
             if (counter % 50 == 0) {
-                std::cout << counter << ": best: " << best_cost << "\n ";
+                std::cout << counter << ": best: " << best_cost << std::endl;
                 //std::cout << bumps.to_realworld(best_coeffs//)-bumps.c0 << "\n ";// << CEGO::vec2string(bumps.c0) << "\n";
             }
             if (best_cost < VTR){ return true; }
         }
         auto endTime = std::chrono::system_clock::now();
         double elap = std::chrono::duration<double>(endTime - startTime).count();
-        std::cout << "run:" << elap << " s\n";
+        std::cout << "run:" << elap << " s" << std::endl;
 
         //bumps.plot_trace(best_costs);
         std::string fname = inputs.root + "Nbumps"+std::to_string(inputs.Nbumps)+"-Nlayers"+std::to_string(Nlayers) + "-run" + std::to_string(inputs.i) + ".txt";
