@@ -20,12 +20,11 @@
 #include <thread>       // std::thread, std::this_thread::sleep_for
 
 #include <Eigen/Dense>
+#include "CEGO/minimizers.hpp"
 #include "CEGO/datatypes.hpp"
 #include "CEGO/utilities.hpp"
 #include "CEGO/lhs.hpp"
-
 #include "CEGO/evolvers/evolvers.hpp"
-
 #include "CEGO/concurrentqueue.h"
 #include "ThreadPool.h"
 
