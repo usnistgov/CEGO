@@ -452,10 +452,10 @@ namespace CEGO {
             return m_double_gradient_function(c);
         };
         pIndividual copy() const override {
-            GradientIndividual<TYPE>* newone = new GradientIndividual<TYPE>(m_c, m_f, m_double_cost_function, m_double_gradient_function);
-            newone->set_age(age());
-            newone->set_needs_evaluation(needs_evaluation());
-            newone->set_cost(m_cost);
+            GradientIndividual<TYPE>* newone = new GradientIndividual<TYPE>(this->m_c, this->m_f, m_double_cost_function, m_double_gradient_function);
+            newone->set_age(this->age());
+            newone->set_needs_evaluation(this->needs_evaluation());
+            newone->set_cost(this->m_cost);
             return pIndividual(newone);
         }
     };
