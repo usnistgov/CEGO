@@ -46,33 +46,24 @@ namespace CEGO {
     calculate it with automatic differentiation
     */
     auto gradient_linesearch(DoubleObjectiveFunction& objfunc, DoubleGradientFunction& gradfunc, const Eigen::ArrayXd& x, const Eigen::ArrayXd& lbvec, const Eigen::ArrayXd& ubvec, std::size_t Nmax_linesearch) {
-        double c = 0.5, tau = 0.1;
+        double c = 0.5, tau = 0.5;
         // Evaluate the objective and gradient functions for double arguments
         auto F = objfunc(x);
         auto g = gradfunc(x);
         // Check upper and lower bounds to determine the largest allowed value for alpha
         Eigen::ArrayXd alphaub = ubvec / g.array(), alphalb = lbvec / g.array();
-        double alphamax = std::max(alphaub.cwiseAbs().maxCoeff(), alphalb.cwiseAbs().maxCoeff());
-        double alpha = 1e-6;
+        double alphamax = std::min(alphaub.cwiseAbs().minCoeff(), alphalb.cwiseAbs().minCoeff());
+        double alpha = alphamax;
         // The termination condition for the reduction in objective function
         double t = c * (g.square()).sum();
-        auto Flast = F;
         for (auto j = 0; j < Nmax_linesearch; ++j) {
-            if (alpha / tau > alphamax) {
-                return std::make_tuple(0, x, F);
-            }
-            alpha /= tau;
+            alpha *= tau;
             auto fnew = objfunc((x - alpha * g.array()));
             double diff = F - fnew;
-            
-            if (fnew > Flast) {
-                return std::make_tuple(0, (x - (alpha * g).array()).eval(), fnew);
-            }
             if (diff > alpha * t) {
                 // Achieved the desired reduction in objective function
                 return std::make_tuple(0, (x - (alpha * g).array()).eval(), fnew); 
             }
-            Flast = fnew;
         }
         return std::make_tuple(1, x, F);
     }
