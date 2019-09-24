@@ -41,7 +41,8 @@ public:
         EArray<double> xx = m_x(indices), yy = m_LHS(indices);
         EArray<double> c = linfit_coeffs(xx, yy, m_Nnum, m_Nden);
         std::cout << c << std::endl;
-        std::cout << "objective: " << objective(c) << std::endl;
+        double o = objective(c);
+        std::cout << "objective: " << o << std::endl;
         std::cout << "relative(%) devs: " << abs_rel_deviations(c).eval() * 100 << std::endl;
     }
     template <typename TYPE> EArray<TYPE> eval_RHS(const EArray<double>& x, const EArray<TYPE> &c) {
@@ -110,7 +111,7 @@ int do_one()
         layers.do_generation();
 
         if (counter % 1000 == 0) {
-            //layers.gradient_minimizer();
+            layers.gradient_minimizer();
         }
 
         auto best_layer = layers.get_best();
@@ -139,7 +140,8 @@ int do_one()
 }
 
 int main() {
-    int good = 0, N = 3;
+    int N = (CEGO::is_CI() ? 3 : 100);
+    int good = 0;
     for (auto i = 0; i < N; ++i) {
         good += do_one();
     }

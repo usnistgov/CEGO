@@ -36,5 +36,38 @@ std::set<std::size_t> get_N_unique(std::size_t Imin, std::size_t Imax, std::size
     return indices;
 }
 
+int get_env_int(const std::string& var, int def) {
+    try {
+        char* s = std::getenv(var.c_str());
+        if (s == nullptr) {
+            return def;
+        }
+        if (strlen(s) == 0) {
+            return def;
+        }
+        return std::stoi(s, nullptr);
+    }
+    catch (...) {
+        return def;
+    }
+}
+
+// See https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+bool is_CI() {
+    try {
+        char* s = std::getenv("CI");
+        if (s == nullptr) {
+            return false;
+        }
+        if (strlen(s) == 0) {
+            return false;
+        }
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
+}
+
 } /* namespace CEGO */
 #endif

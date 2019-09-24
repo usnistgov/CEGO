@@ -1,5 +1,6 @@
 #include "CEGO/CEGO.hpp"
 #include "CEGO/minimizers.hpp"
+#include "CEGO/utilities.hpp"
 #include <Eigen/Dense>
 
 // autodiff include
@@ -287,22 +288,6 @@ bool do_one(BumpsInputs &inputs)
     return 0;
 }
 
-int get_env_int(const std::string &var, int def) {
-    try {
-        char *s = std::getenv(var.c_str());
-        if (s == nullptr) {
-            return def;
-        }
-        if (strlen(s) == 0) {
-            return def;
-        }
-        return std::stoi(s, nullptr);
-    }
-    catch(...) {
-        return def;
-    }
-}
-
 int main() {
     #if defined(PYBIND11)
     py::scoped_interpreter interp{};
@@ -310,6 +295,7 @@ int main() {
     BumpsInputs in;
     in.root = "shaped-";
     in.Nlayersvec = {3};
+    using CEGO::get_env_int;
     auto Nrepeats = get_env_int("NREPEATS", 10);
     in.Nbumps = get_env_int("NBUMPS", 1);
     in.gradmin_mod = get_env_int("GRADMOD", 100);
