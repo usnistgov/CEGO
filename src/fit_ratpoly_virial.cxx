@@ -123,8 +123,8 @@ int do_one()
         EArray<double> c = Eigen::Map<const EArray<double>>(&(best_coeffs[0]), best_coeffs.size());
         if (counter % 50 == 0) {
             std::cout << counter << ": best: " << best_cost << std::endl;
-            std::cout << counter << ": best coeffs: " << c << "||" << std::endl;
-            std::cout << counter << ": obj again: " << rp.objective(c) << "||" << std::endl;
+            //std::cout << counter << ": best coeffs: " << c << "||" << std::endl;
+            //std::cout << counter << ": obj again: " << rp.objective(c) << "||" << std::endl;
         }
         if (best_cost < VTR) { success = true;  break; }
     }
