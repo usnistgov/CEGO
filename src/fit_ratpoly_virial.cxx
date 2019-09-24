@@ -56,7 +56,7 @@ public:
         }
         return num/(1+den);
     }
-    template <typename TYPE> auto objective(const EArray<TYPE>& c) {
+    template <typename TYPE> TYPE objective(const EArray<TYPE>& c) {
         return ((eval_RHS(m_x, c) - m_LHS)/m_LHS).square().sum();
     }
     template <typename TYPE> auto abs_rel_deviations(const EArray<TYPE>& c) {
