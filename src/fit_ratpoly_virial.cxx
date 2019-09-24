@@ -43,7 +43,8 @@ public:
         std::cout << c << std::endl;
         double o = objective(c);
         std::cout << "objective: " << o << std::endl;
-        std::cout << "relative(%) devs: " << abs_rel_deviations(c).eval() * 100 << std::endl;
+        EArray<double> devs = abs_rel_deviations(c).eval() * 100;
+        std::cout << "relative(%) devs: " << devs << std::endl;
     }
     template <typename TYPE> EArray<TYPE> eval_RHS(const EArray<double>& x, const EArray<TYPE> &c) {
         EArray<TYPE> num = EArray<TYPE>::Zero(x.size()), den = EArray<TYPE>::Zero(x.size());
@@ -63,7 +64,7 @@ public:
         return ((eval_RHS(m_x, c) - m_LHS)/m_LHS).eval();
     }
     double objective(const CEGO::AbstractIndividual *pind) {
-        auto &c = static_cast<const CEGO::NumericalIndividual<double>*>(pind)->get_coeff_array<double>();
+        const auto &c = static_cast<const CEGO::NumericalIndividual<double>*>(pind)->get_coeff_array<double>().eval();
         return objective(c);
     }  
 };
