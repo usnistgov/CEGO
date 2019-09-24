@@ -27,17 +27,18 @@ public:
     
     RatPoly(const std::size_t Nnum, const std::size_t Nden) : m_Nnum(Nnum), m_Nden(Nden)
     {
-        // Data from Garberoglio, DOI: 10.1039/C8FD00092A
+        // Data from second virial coefficient from Garberoglio for water, DOI: 10.1039/C8FD00092A
         m_T.resize(21);
         B2.resize(21);
         m_T << 200, 225, 250, 273.15, 300, 325, 350, 375, 400, 450, 500, 550, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000;
         B2 << -2.3825E-02, -8.6200E-03, -3.9850E-03, -2.2590E-03, -1.3301E-03, -8.9350E-04, -6.3650E-04, -4.7840E-04, -3.7240E-04, -2.4480E-04, -1.7240E-04, -1.2830E-04, -9.8700E-05, -6.2460E-05, -4.1280E-05, -2.7580E-05, -1.8550E-05, -5.0400E-06, 2.0800E-06, 6.2000E-06, 8.8800E-06;
         m_LHS = B2;
         m_x = 200/m_T;
+        //solve_linear();
     }
     void solve_linear() {
         std::cout << "----------- LINEAR --------- " << std::endl;
-        Eigen::ArrayXi indices = Eigen::ArrayXi::LinSpaced(m_Nnum + m_Nden, 0L, static_cast<int>(m_x.size()));
+        Eigen::ArrayXi indices = Eigen::ArrayXi::LinSpaced(m_Nnum + m_Nden, 0L, static_cast<int>(m_x.size()-1));
         EArray<double> xx = m_x(indices), yy = m_LHS(indices);
         EArray<double> c = linfit_coeffs(xx, yy, m_Nnum, m_Nden);
         std::cout << c << std::endl;
@@ -47,7 +48,8 @@ public:
         std::cout << "relative(%) devs: " << devs << std::endl;
     }
     template <typename TYPE> EArray<TYPE> eval_RHS(const EArray<double>& x, const EArray<TYPE> &c) {
-        EArray<TYPE> num = EArray<TYPE>::Zero(x.size()), den = EArray<TYPE>::Zero(x.size());
+        EArray<TYPE> num = EArray<TYPE>::Zero(x.size()), 
+                     den = EArray<TYPE>::Zero(x.size());
         assert(m_Nnum + m_Nden == c.size());
         for (auto i = 0; i < m_Nnum; ++i) {
             num += c[i]*x.pow(i);
@@ -115,17 +117,14 @@ int do_one()
             layers.gradient_minimizer();
         }
 
-        auto best_layer = layers.get_best();
         double best_cost;
-        std::vector<double> best_coeffs;
-        best_cost = std::get<0>(best_layer); best_costs.push_back(best_cost);
-        best_coeffs = std::get<1>(best_layer);
+        std::vector<double> best_coeffs; 
+        std::tie(best_cost, best_coeffs) = layers.get_best();
         EArray<double> c = Eigen::Map<const Eigen::ArrayXd>(&(best_coeffs[0]), best_coeffs.size());
         if (counter % 50 == 0) {
             std::cout << counter << ": best: " << best_cost << std::endl;
-        }
-        if (counter % 200 == -1) {
-            std::cout << counter << ": best coeffs: " << c << std::endl;
+            std::cout << counter << ": best coeffs: " << c << "||" << std::endl;
+            std::cout << counter << ": obj again: " << rp.objective(c) << "||" << std::endl;
         }
         if (best_cost < VTR) { success = true;  break; }
     }
