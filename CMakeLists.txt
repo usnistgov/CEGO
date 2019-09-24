@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(CEGO)
 
-# We heavily use C++11, C++11 support is required
+# We heavily use C++17, C++17 support is required
 set (CMAKE_CXX_STANDARD 17)
 
 # Add the pybind11 stuff

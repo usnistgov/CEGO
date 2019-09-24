@@ -31,6 +31,7 @@ script:
   - ./StornPriceprofiling
   - ./main
   - NBUMPS=1 ./shaped_inverse_gaussian
+  - ./fit_ratpoly_virial
 
 notifications:
   email:

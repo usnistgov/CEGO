@@ -292,7 +292,7 @@ namespace CEGO{
          */
         void graduate_elderly_individuals() {
 
-            // Iterate backwards through the layers, starting at the N-1 layer, since the 
+            // Iterate backwards through the N layers, starting at the N-1 layer, since the 
             // last layer has an infinite age limit, and you cannot age out of the 
             // highest age limit layer
             for (long ilayer = static_cast<long>(m_layers.size())-2; ilayer >= 0; --ilayer) {
@@ -721,7 +721,17 @@ namespace CEGO{
                     for (auto i = 0; i < xnew.size(); ++i) {
                         cnew.push_back(xnew(i));
                     }
-                    ind->set_coefficients(cnew);
+                    if constexpr (std::is_same<T, CEGO::numberish>::value) {
+                        ind->set_coefficients(cnew);
+                    }
+                    else {
+                        // First cast all to type, then set :(
+                        std::vector<T> cnewcopy;
+                        for (auto i = 0; i < cnew.size(); ++i) {
+                            cnewcopy.push_back(cnew[i]);
+                        }
+                        ind->set_coefficients(cnewcopy);
+                    }
                     ind->calc_cost();
                     //std::cout << F / F0 << std::endl;
                 }
