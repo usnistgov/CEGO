@@ -60,7 +60,7 @@ public:
     template <typename TYPE> TYPE objective(const EArray<TYPE>& c) {
         return ((eval_RHS(m_x, c) - m_LHS)/m_LHS).square().sum();
     }
-    template <typename TYPE> auto abs_rel_deviations(const EArray<TYPE>& c) {
+    template <typename TYPE> EArray<TYPE> abs_rel_deviations(const EArray<TYPE>& c) {
         return ((eval_RHS(m_x, c) - m_LHS)/m_LHS).eval();
     }
     double objective(const CEGO::AbstractIndividual *pind) {
