@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "CEGO/CEGO.hpp"
+#include <iostream>
 
 namespace CEGO {
 
@@ -26,7 +27,8 @@ namespace CEGO {
     }
 
     struct numberish {
-        enum types { INT, DOUBLE } type;
+        enum types { EMPTY, INT, DOUBLE } type;
+        numberish() { type = EMPTY; }
         numberish(const int &value) { u.i = value; type = INT; }
         numberish(const double &value) { u.d = value; type = DOUBLE; }
         union id {
@@ -136,6 +138,11 @@ namespace CEGO {
         for (auto &&el : v)
             o += std::to_string(el) + sep;
         return o;
+    }
+
+    std::ostream & operator << (std::ostream &out, const numberish &c)
+    {
+        out << to_string(c);
     }
 
     struct Bound {
@@ -461,3 +468,20 @@ namespace CEGO {
     };
 
 } /* namespace CEGO*/
+
+namespace Eigen {
+template<> struct NumTraits<CEGO::numberish>: NumTraits<double> 
+// Deriving from double permits to get the epsilon, dummy_precision, lowest, highest functions
+{
+  enum {
+    IsComplex = 0,
+    IsInteger = 0,
+    IsSigned = 1,
+    RequireInitialization = 1,
+    ReadCost = 1,
+    AddCost = 3,
+    MulCost = 3
+  };
+};
+
+}; /* namespace Eigen */
