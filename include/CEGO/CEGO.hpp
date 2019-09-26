@@ -69,7 +69,7 @@ namespace CEGO{
         auto gen = get_gen();
         Population out; out.reserve(count);
         for (std::size_t i = 0; i < count; ++i) {
-            std::vector<T> c; c.reserve(length_ind);
+            EArray<T> c(length_ind);
             for (std::size_t j = 0; j < length_ind; ++j) {
                 auto &&bound = bounds[j];
                 double d = 0; int integer = 0;
@@ -77,9 +77,9 @@ namespace CEGO{
 
                 switch (bound.m_lower.type) {
                 case CEGO::numberish::types::DOUBLE:
-                    c.emplace_back(d); break;
+                    c(j) = d; break;
                 case CEGO::numberish::types::INT:
-                    c.emplace_back(integer); break;
+                    c(j) = integer; break;
                 }
             }
             assert(c.size() == length_ind);
@@ -99,7 +99,7 @@ namespace CEGO{
         auto gen = get_gen();
         Population out; out.reserve(count);
         for (std::size_t i = 0; i < count; ++i) {
-            std::vector<T> c; c.reserve(length_ind);
+            EArray<T> c(length_ind);
             for (std::size_t j = 0; j < length_ind; ++j) {
                 auto &&bound = bounds[j];
 
@@ -107,11 +107,11 @@ namespace CEGO{
                 case CEGO::numberish::types::DOUBLE:
                 {
                     double w = population(i,j);
-                    c.emplace_back(bound.m_lower.as_double()*w + bound.m_upper.as_double()*(1-w)); break;
+                    c(j) = bound.m_lower.as_double()*w + bound.m_upper.as_double()*(1-w); break;
                 }
                 case CEGO::numberish::types::INT:{
                     double w = population(i, j);
-                    c.emplace_back(int(round(bound.m_lower.as_int()*w + bound.m_upper.as_int()*(1 - w)))); break;
+                    c(j) = int(round(bound.m_lower.as_int()*w + bound.m_upper.as_int()*(1 - w))); break;
                 }
                 }
             }
@@ -174,11 +174,11 @@ namespace CEGO{
         std::size_t parallel_threads = 6;
         std::size_t Nind_size, Npop_size, Nlayers, age_gap;
 
-        Layers(const std::function<double(const std::vector<T>&)> &function, std::size_t Nind_size, std::size_t Npop_size, std::size_t Nlayers, std::size_t age_gap = 5)
+        Layers(const std::function<double(const EArray<T>&)> &function, std::size_t Nind_size, std::size_t Npop_size, std::size_t Nlayers, std::size_t age_gap = 5)
             : Nind_size(Nind_size), Npop_size(Npop_size), Nlayers(Nlayers), age_gap(age_gap){
 
             m_cost_function = [function](const CEGO::AbstractIndividual *pind) {
-                const std::vector<T> &c = static_cast<const CEGO::NumericalIndividual<T>*>(pind)->get_coefficients();
+                const EArray<T> &c = static_cast<const CEGO::NumericalIndividual<T>*>(pind)->get_coefficients();
                 return function(c);
             };
         };
@@ -270,7 +270,7 @@ namespace CEGO{
 
             // By default, individuals are "normal", and enhanced with a cost function that takes the individual as argument
             if (m_double_cost_function == nullptr && m_double_gradient_function == nullptr) {
-                return [&cost_function](const std::vector<T>&& c) {
+                return [&cost_function](const EArray<T>&& c) {
                     return new NumericalIndividual<T>(std::move(c), cost_function);
                 };
             }
@@ -279,7 +279,7 @@ namespace CEGO{
                 auto& double_gradient_function = m_double_gradient_function;
 
                 // Upgraded individual that also implements gradient function
-                return [&cost_function, &double_cost_function, &double_gradient_function](const std::vector<T>&& c) {
+                return [&cost_function, &double_cost_function, &double_gradient_function](const EArray<T>&& c) {
                     return new GradientIndividual<T>(std::move(c), cost_function, double_cost_function, double_gradient_function);
                 };
             }
@@ -666,10 +666,10 @@ namespace CEGO{
             m_generation++;
         }
         // Get the best individuals from each layer, starting with layer 0
-        std::vector<std::tuple<double, const std::vector<T> > > get_best_per_layer(){
-            std::vector<std::tuple<double, const std::vector<T> > > out;
+        auto get_best_per_layer(){
+            std::vector<std::tuple<double, const EArray<T> > > out;
             for (const auto &layer : m_layers) {
-                const auto c = static_cast<const NumericalIndividual<T>*>(layer[0].get())->get_coefficients();
+                const EArray<T> c = static_cast<const NumericalIndividual<T>*>(layer[0].get())->get_coefficients();
                 out.emplace_back(std::make_tuple(layer[0]->get_cost(), c));
             }
             return out;
@@ -680,7 +680,7 @@ namespace CEGO{
 
             // The bounds are universal, the same for all individuals
             auto bounds = get_bounds();
-            Eigen::ArrayXd ub(bounds.size()), lb(bounds.size()), xnew(bounds.size());
+            EArray<double> ub(bounds.size()), lb(bounds.size()), xnew(bounds.size());
             auto i = 0;
             for (auto& b : bounds) {
                 ub(i) = b.m_upper;
@@ -691,19 +691,16 @@ namespace CEGO{
             auto minimizer = [&ub, &lb](const CEGO::pIndividual& pind) {
 
                 // Dynamically cast to a class with the appropriate methods
-                CEGO::GradientIndividual<T>* ind = dynamic_cast<CEGO::GradientIndividual<T>*>(pind.get());
-                if (ind == nullptr) {
-                    throw std::bad_cast();
-                }
+                CEGO::GradientIndividual<T>& ind = dynamic_cast<CEGO::GradientIndividual<T>&>(*pind);
 
                 // The objective function to be minimized (Array<double> -> double)
-                CEGO::DoubleObjectiveFunction obj = [&ind](const EArray<double>& c)-> double { return ind->cost(c); };
+                CEGO::DoubleObjectiveFunction obj = [&ind](const EArray<double>& c)-> double { return ind.cost(c); };
                 // The gradient function used to do gradient optimization (Array<double> -> Array<double>)
-                CEGO::DoubleGradientFunction g = [&ind](const EArray<double>& c)->EArray<double> { return ind->gradient(c); };
+                CEGO::DoubleGradientFunction g = [&ind](const EArray<double>& c)->EArray<double> { return ind.gradient(c); };
                 
                 // Store current values
-                EArray<double> x0 = ind->template get_coeff_array<double>(); // https://stackoverflow.com/a/3786481
-                auto F0 = ind->get_cost();
+                EArray<double> x0 = ind.get_coefficients().cast<double>();
+                auto F0 = ind.get_cost();
                 
                 // Configuration of the gradient minimizer
                 CEGO::BoxGradientFlags flags;
@@ -711,28 +708,14 @@ namespace CEGO{
                 flags.VTR = F0*0.5; // If we get to this level, gradient step is accepted
 
                 // Run the minimization
-                Eigen::ArrayXd xnew;
-                double F; 
+                double F;
+                EArray<double> xnew;
                 std::tie(xnew, F) = CEGO::box_gradient_minimization(obj, g, x0, lb, ub, flags);
 
                 if (F < F0) {
                     // We reduced the cost function, yay!
-                    std::vector<CEGO::numberish> cnew;
-                    for (auto i = 0; i < xnew.size(); ++i) {
-                        cnew.push_back(xnew(i));
-                    }
-                    if constexpr (std::is_same<T, CEGO::numberish>::value) {
-                        ind->set_coefficients(cnew);
-                    }
-                    else {
-                        // First cast all to type, then set :(
-                        std::vector<T> cnewcopy;
-                        for (auto i = 0; i < cnew.size(); ++i) {
-                            cnewcopy.push_back(cnew[i]);
-                        }
-                        ind->set_coefficients(cnewcopy);
-                    }
-                    ind->calc_cost();
+                    ind.set_coefficients(xnew.cast<T>());
+                    ind.calc_cost();
                     //std::cout << F / F0 << std::endl;
                 }
                 else {
@@ -743,7 +726,7 @@ namespace CEGO{
         };
 
         // Get the layer with the individual with the lowest (best) cost
-        std::tuple<double, const std::vector<T> > get_best() {
+        auto get_best() {
             auto B = get_best_per_layer();
             // The best individual might not be in the highest layer, let's find the best one
             return *std::min_element(B.begin(), B.end(), [](decltype(B.back()) &b1, decltype(B.back()) &b2) { return std::get<0>(b1) < std::get<0>(b2); });
@@ -753,11 +736,9 @@ namespace CEGO{
          * \sa get_best_per_layer
          */
         std::string print_diagnostics() {
-            auto best = get_best(); 
-            double best_cost; std::vector<T> c;
-            std::tie(best_cost, c) = best;
+            auto [best_cost, c] = get_best();
             std::stringstream ss;
-            ss << "i: " << static_cast<int>(m_generation - 1) << " best: " << best_cost << " c: " << vec2string(c) << " queue: " << result_queue.size_approx();
+            ss << "i: " << static_cast<int>(m_generation - 1) << " best: " << best_cost << " c: " << c << " queue: " << result_queue.size_approx();
             return ss.str();
         }
 

@@ -82,13 +82,13 @@ namespace CEGO {
     auto box_gradient_minimization(
         DoubleObjectiveFunction& funcdouble, 
         DoubleGradientFunction& gradfunc, 
-        const Eigen::ArrayXd& x, 
-        const Eigen::ArrayXd& lbvec, 
+        const EArray<double>& x,
+        const EArray<double>& lbvec,
         const Eigen::ArrayXd& ubvec,
         const BoxGradientFlags &flags = BoxGradientFlags())
     {
         int code = 0;
-        Eigen::ArrayXd xnew = x;
+        EArray<double> xnew = x;
         double F0 = funcdouble(x), F;
         for (auto counter = 0; counter <= flags.Nmax; ++counter) {
             std::tie(code, xnew, F) = gradient_linesearch(funcdouble, gradfunc,  xnew, lbvec, ubvec, flags.Nmax_linesearch);

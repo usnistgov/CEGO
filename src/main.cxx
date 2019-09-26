@@ -193,7 +193,7 @@ void upgrade_Layers(py::class_<CEGO::Layers<T>> &layers){
     using namespace CEGO;
     typedef Layers<T> MyLayers;
 
-    layers.def(py::init<std::function<double(const std::vector<T> &)>&, int, int, int, int>());
+    layers.def(py::init<std::function<double(const EArray<T> &)>&, int, int, int, int>());
     layers.def("do_generation", &MyLayers::do_generation);
     layers.def("print_diagnostics", &MyLayers::print_diagnostics);
     layers.def("get_best", &MyLayers::get_best);

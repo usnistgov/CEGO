@@ -11,6 +11,7 @@ namespace py = pybind11;
 #include <atomic>
 
 std::atomic_size_t Ncalls(0);
+using CEGO::EArray;
 
 class Bumps {
 public:
@@ -45,14 +46,14 @@ public:
         return s;
     }
     double objective(const CEGO::AbstractIndividual *pind) {
-        const std::vector<double> &c = static_cast<const CEGO::NumericalIndividual<double>*>(pind)->get_coefficients();
-        return objective(Eigen::Map<const Eigen::ArrayXd>(&(c[0]), c.size()) );
+        const EArray<double> &c = static_cast<const CEGO::NumericalIndividual<double>*>(pind)->get_coefficients();
+        return objective(c);
     }
-    double objective_vec(const std::vector<double> &c) {
-        return objective(Eigen::Map<const Eigen::ArrayXd>(&(c[0]), c.size()));
+    double objective_vec(const EArray<double> &c) {
+        return objective(c);
     }
-    double penalty_vec(const std::vector<double> &c) {
-        return penalty(Eigen::Map<const Eigen::ArrayXd>(&(c[0]), c.size()));
+    double penalty_vec(const EArray<double> &c) {
+        return penalty(c);
     }
     double penalty(const Eigen::ArrayXd &c) {
         Eigen::ArrayXd q = c - c.floor();

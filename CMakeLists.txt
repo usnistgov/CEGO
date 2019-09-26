@@ -9,6 +9,11 @@ if (NOT CEGO_NO_PYTHON)
   add_subdirectory("${CMAKE_SOURCE_DIR}/externals/pybind11" "pybind11")
 endif()
 
+# No more CRT secure warnings...
+if(MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 macro(add_nix_libraries target)
     # See https://stackoverflow.com/a/29871891
     # Add DL and pthreads

@@ -143,21 +143,11 @@ void do_one(Inputs& inputs)
             layers.gradient_minimizer();
         }
 
-        // Store the best objective function in each layer
-        std::vector<double> oo;
-        for (auto &&cost_coefficients : layers.get_best_per_layer()) {
-            oo.push_back(std::get<0>(cost_coefficients));
-        }
-        objs.push_back(oo);
-        auto stats = layers.cost_stats_each_layer();
-
         // For the overall best result, print it, and write JSON to file
-        auto best_layer = layers.get_best();
-        auto best_coeffs = std::get<1>(best_layer);
-        best_cost = std::get<0>(best_layer); best_costs.push_back(best_cost);
+        auto [best_layer, best_coeffs] = layers.get_best();
         if (counter % 50 == 0) {
             std::cout << counter << ": best: " << best_cost << "\n ";
-            std::cout << CEGO::vec2string(best_coeffs) << "\n";
+            std::cout << best_coeffs << "\n";
         }
         if (best_cost < VTR){ break; }
     }

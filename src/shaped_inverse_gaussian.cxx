@@ -78,7 +78,7 @@ public:
         return s.eval();
     }
     double objective(const CEGO::AbstractIndividual *pind) {
-        const std::vector<CEGO::numberish> &c = static_cast<const CEGO::NumericalIndividual<CEGO::numberish>*>(pind)->get_coefficients();
+        const EArray<CEGO::numberish> &c = static_cast<const CEGO::NumericalIndividual<CEGO::numberish>*>(pind)->get_coefficients();
         Eigen::ArrayXd cc(c.size());
         for (auto i = 0; i < cc.size(); ++i) {
             cc[i] = c[i];
@@ -258,9 +258,7 @@ bool do_one(BumpsInputs &inputs)
             auto stats = layers.cost_stats_each_layer();
 
             // For the overall best result, print it, and write JSON to file
-            auto best_layer = layers.get_best();
-            auto best_coeffs = std::get<1>(best_layer);
-            best_cost = std::get<0>(best_layer); best_costs.push_back(best_cost);
+            auto [best_cost, best_coeffs] = layers.get_best();
             if (counter % 50 == 0) {
                 std::cout << counter << ": best: " << best_cost << std::endl;
                 //std::cout << bumps.to_realworld(best_coeffs//)-bumps.c0 << "\n ";// << CEGO::vec2string(bumps.c0) << "\n";

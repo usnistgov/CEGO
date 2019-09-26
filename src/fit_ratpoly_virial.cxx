@@ -116,11 +116,8 @@ int do_one()
         if (counter % 1000 == 0) {
             layers.gradient_minimizer();
         }
-
-        double best_cost;
-        std::vector<double> best_coeffs; 
-        std::tie(best_cost, best_coeffs) = layers.get_best();
-        EArray<double> c = Eigen::Map<const EArray<double>>(&(best_coeffs[0]), best_coeffs.size());
+        
+        auto [best_cost, best_coeffs] = layers.get_best();
         if (counter % 50 == 0) {
             std::cout << counter << ": best: " << best_cost << std::endl;
             //std::cout << counter << ": best coeffs: " << c << "||" << std::endl;
@@ -130,8 +127,7 @@ int do_one()
     }
     auto best_layer = layers.get_best();
     auto best_coeffs = std::get<1>(best_layer);
-    EArray<double> c = Eigen::Map<const EArray<double>>(&(best_coeffs[0]), best_coeffs.size());
-    std::cout << rp.abs_rel_deviations(c)*100 << std::endl;
+    std::cout << rp.abs_rel_deviations(best_coeffs)*100 << std::endl;
     auto endTime = std::chrono::system_clock::now();
     double elap = std::chrono::duration<double>(endTime - startTime).count();
     std::cout << "run:" << elap << " s\n";

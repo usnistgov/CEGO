@@ -143,6 +143,7 @@ namespace CEGO {
     std::ostream & operator << (std::ostream &out, const numberish &c)
     {
         out << to_string(c);
+        return out;
     }
 
     struct Bound {
@@ -279,6 +280,7 @@ namespace CEGO {
 
     /// A typedef for a  pointer to an individual
     typedef std::unique_ptr<AbstractIndividual> pIndividual;
+    
 
     class AbstractIndividual
     {
@@ -326,7 +328,7 @@ namespace CEGO {
             const RecombinationFlags &flags) = 0;
     };
 
-    template <typename T> using IndividualFactory = std::function<AbstractIndividual* (const std::vector<T>&&)>;
+    template <typename T> using IndividualFactory = std::function<AbstractIndividual* (const EArray<T>&&)>;
     /// A typedef for a population of individuals
     typedef std::vector<pIndividual > Population;
     /// A typedef for the cost function
@@ -340,13 +342,13 @@ namespace CEGO {
     class NumericalIndividual : public AbstractIndividual {
     protected:
         double m_cost = 1e99;
-        std::vector<T> m_c;
+        EArray<T> m_c;
         const CostFunction<T> m_f;
     public:
-        NumericalIndividual(const std::vector<T>&&c, const CostFunction<T> &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
-        NumericalIndividual(const std::vector<T>&c, const CostFunction<T> &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
-        const std::vector<T> & get_coefficients() const { return m_c; };
-        void set_coefficients(const std::vector<T> &c){ m_c = c; };
+        NumericalIndividual(const EArray<T>&&c, const CostFunction<T> &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
+        NumericalIndividual(const EArray<T>&c, const CostFunction<T> &f) : AbstractIndividual(0), m_c(c), m_f(f) {};
+        const EArray<T> & get_coefficients() const { return m_c; };
+        void set_coefficients(const EArray<T> &c){ m_c = c; };
         void calc_cost() override {
             m_cost = m_f(this);
         }
@@ -377,15 +379,15 @@ namespace CEGO {
         {
 
             // Get the coefficients of the winner
-            std::vector<T> c0 = get_coefficients();
+            EArray<T> c0 = get_coefficients();
 
             // The size of the individual
             std::size_t N = c0.size();
 
             // Get the coefficients of the other one
-            std::vector<T> c1 = static_cast<NumericalIndividual<T>*>(other.get())->get_coefficients();
+            EArray<T> c1 = static_cast<NumericalIndividual<T>*>(other.get())->get_coefficients();
 
-            std::vector<T> cnew;
+            EArray<T> cnew(N);
 
             std::random_device rd;
             std::mt19937_64 gen(rd());
@@ -397,10 +399,10 @@ namespace CEGO {
                     double k = std::normal_distribution<>(0, flags.uniform_w_stddev)(gen);
                     numberish c = c0[i] + k*(c1[i] - c0[i]);
                     if (!bounds.empty() && flags.enforce_bounds) {
-                        cnew.push_back(bounds[i].enforce_bounds(c));
+                        cnew(i) = bounds[i].enforce_bounds(c);
                     }
                     else {
-                        cnew.push_back(c);
+                        cnew(i) = c;
                     }
                 }
             }
@@ -410,10 +412,10 @@ namespace CEGO {
                 for (auto i = 0; i < N; ++i) {
                     numberish c = c0[i] + k*(c1[i] - c0[i]);
                     if (!bounds.empty() && flags.enforce_bounds) {
-                        cnew.push_back(bounds[i].enforce_bounds(c));
+                        cnew(i) = bounds[i].enforce_bounds(c);
                     }
                     else {
-                        cnew.push_back(c);
+                        cnew(i) = c;
                     }
                 }
             }
@@ -433,6 +435,8 @@ namespace CEGO {
         }
     };
 
+    template <typename T> using pNumIndividual = std::unique_ptr<NumericalIndividual<T>>;
+
     template<typename TYPE>
     class GradientIndividual : public NumericalIndividual<TYPE> {
     protected:
@@ -440,14 +444,14 @@ namespace CEGO {
         DoubleGradientFunction m_double_gradient_function;
     public:
         GradientIndividual(
-            const std::vector<TYPE>&& c, 
+            const EArray<TYPE>&& c, 
             const CostFunction<TYPE>& f, 
             const DoubleCostFunction &double_cost_function, 
             const DoubleGradientFunction &double_gradient_function)
             : NumericalIndividual<TYPE>(c,f), m_double_cost_function(double_cost_function), m_double_gradient_function(double_gradient_function)
         {}; 
         GradientIndividual(
-            const std::vector<TYPE>& c,
+            const EArray<TYPE>& c,
             const CostFunction<TYPE>& f,
             const DoubleCostFunction& double_cost_function,
             const DoubleGradientFunction& double_gradient_function
@@ -466,6 +470,7 @@ namespace CEGO {
             return pIndividual(newone);
         }
     };
+
 
 } /* namespace CEGO*/
 
