@@ -124,14 +124,13 @@ Population differential_evolution(const Population &this_layer,
                                   const Population &older_layer, 
                                   const std::vector<Bound> &bounds, 
                                   const IndividualFactory<T> &factory, 
+                                  std::mt19937 &rng,
                                   const DifferentialEvolutionFlags &flags)
 {
     Population outputs;
-    std::uniform_real_distribution<> float_dis(0, 1);
+    std::uniform_real_distribution<double> float_dis(0, 1);
     std::uniform_int_distribution<> this_int_selector = (this_layer.size() == 0) ? std::uniform_int_distribution<>(0, 1) : std::uniform_int_distribution<>(0, static_cast<int>(this_layer.size()) - 1);
     std::uniform_int_distribution<> older_int_selector = (older_layer.size() == 0) ? std::uniform_int_distribution<>(0, 1) : std::uniform_int_distribution<>(0, static_cast<int>(older_layer.size()) - 1);
-    std::random_device rd;
-    std::mt19937_64 gen(rd());
 
     // Keep the first Nelite elements
     for (auto it = this_layer.cbegin(); it != this_layer.cbegin()+flags.Nelite; ++it){
@@ -139,7 +138,7 @@ Population differential_evolution(const Population &this_layer,
     }
 
     double Fmin = std::min(flags.Fmin, flags.Fmax), Fmax = std::max(flags.Fmin, flags.Fmax);
-    double F = std::uniform_real_distribution<>(Fmin, Fmax)(gen);
+    double F = std::uniform_real_distribution<>(Fmin, Fmax)(rng);
 
     for (auto i = flags.Nelite; i < this_layer.size(); ++i)
     {
@@ -153,9 +152,9 @@ Population differential_evolution(const Population &this_layer,
             if (failure_count > 10000) {
                 throw std::range_error("Cannot populate individuals for differential evolution");
             }
-            if (older_layer.size() == 0 || float_dis(gen) < 0.8) {
+            if (older_layer.size() == 0 || float_dis(rng) < 0.8) {
                 // Pull from this generation
-                auto k = static_cast<int>(this_int_selector(gen));
+                auto k = static_cast<int>(this_int_selector(rng));
                 if (uniques.find(k) == uniques.end()) {
                     uniques.insert(static_cast<int>(k));
                     candidates.emplace_back(this_layer[k]->copy());
@@ -166,7 +165,7 @@ Population differential_evolution(const Population &this_layer,
             }
             else {
                 // Pull from the old generation
-                auto k = static_cast<int>(older_int_selector(gen));
+                auto k = static_cast<int>(older_int_selector(rng));
                 if (uniques.find(-k) == uniques.end()) {
                     candidates.emplace_back(older_layer[k]->copy());
                     uniques.insert(static_cast<int>(-k));
@@ -181,7 +180,7 @@ Population differential_evolution(const Population &this_layer,
                             static_cast<const NumericalIndividual<T>&>(*candidates[0]),
                             static_cast<const NumericalIndividual<T>&>(*candidates[1]),
                             static_cast<const NumericalIndividual<T>&>(*candidates[2]),
-                            gen, factory, F, flags.CR);
+                            rng, factory, F, flags.CR);
         // Impose the bounds if bounds are provided
         if (!bounds.empty()) {
             const auto c = static_cast<const NumericalIndividual<T>&>(*other).get_coefficients();
@@ -190,7 +189,7 @@ Population differential_evolution(const Population &this_layer,
                 // If the value exceeds the bounds, then 
                 // 1) try to reflect back into the bounds if possible, or
                 // 2) randomly generate a number inside the bounds
-                T cconstrained = static_cast<T>(bounds[i].reflect_then_random_out_of_bounds(gen,c[i]));
+                T cconstrained = static_cast<T>(bounds[i].reflect_then_random_out_of_bounds(rng,c[i]));
                 cnew(i) = cconstrained;
             }
             other.reset(factory(std::move(cnew)));

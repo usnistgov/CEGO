@@ -8,10 +8,12 @@
   @brief Generate samples for each parameter in [0,1] with the use of Latin-Hypercube sampling
   @param Npop The number of members in the population
   @param Nparam The number of independent variables
+  @param rng An initialized Mersenne twister object
   @retuns population The matrix of the population
+  
   @note This code is based upon the Python implementation of LHS sampling in scipy.optimize, available with a PSF license
  */
-inline Eigen::ArrayXXd LHS_samples(Eigen::Index Npop, Eigen::Index Nparam) {
+inline Eigen::ArrayXXd LHS_samples(Eigen::Index Npop, Eigen::Index Nparam, std::mt19937 &rng) {
     double segsize = 1.0 / Npop;
     
     // Each entry in a1 is a random number between zero and 1 / Npop;
@@ -24,12 +26,10 @@ inline Eigen::ArrayXXd LHS_samples(Eigen::Index Npop, Eigen::Index Nparam) {
     Eigen::ArrayXXd samples = a1.colwise() + a2;
 
     // A function to generate shuffled (permuted) indices
-    auto random_indices = [](Eigen::Index Npop) {
+    auto random_indices = [&rng](Eigen::Index Npop) {
         std::vector<Eigen::Index> indices;
         for (auto j = 0; j < Npop; ++j){ indices.emplace_back(j); }
-        std::random_device rd;
-        std::mt19937 g(rd());
-        std::shuffle(indices.begin(), indices.end(), g);
+        std::shuffle(indices.begin(), indices.end(), rng);
         return indices;
     };
 

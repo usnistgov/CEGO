@@ -39,12 +39,6 @@ namespace CEGO{
         Result(Eigen::ArrayXd &&c, double &&ssq) : c(c), ssq(ssq) {};
     };
 
-    /// Return Mersenne twister generator
-    inline std::mt19937 get_gen(){
-        std::random_device rd;
-        return std::mt19937(rd());
-    };
-
     template<class T>
     inline std::string vec2string(const std::vector<T> &v, const std::string &sep = ", ") {
         using std::to_string;
@@ -63,17 +57,16 @@ namespace CEGO{
 
     /// Generate a random population of individuals
     template<typename T>
-    Population random_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const IndividualFactory<T> &factory)
+    Population random_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const IndividualFactory<T> &factory, std::mt19937& rng)
     {
         auto length_ind = bounds.size();
-        auto gen = get_gen();
         Population out; out.reserve(count);
         for (std::size_t i = 0; i < count; ++i) {
             EArray<T> c(length_ind);
             for (std::size_t j = 0; j < length_ind; ++j) {
                 auto &&bound = bounds[j];
                 double d = 0; int integer = 0;
-                bound.gen_uniform(gen, d, integer);
+                bound.gen_uniform(rng, d, integer);
 
                 switch (bound.m_lower.type) {
                 case CEGO::numberish::types::DOUBLE:
@@ -92,13 +85,12 @@ namespace CEGO{
 
     /// Generate a population of individuals with the use of Latin-Hypercube sampling
     template<typename T>
-    Population LHS_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const IndividualFactory<T> &factory)
+    Population LHS_population(const std::vector<CEGO::Bound> bounds, std::size_t count, const IndividualFactory<T> &factory, std::mt19937 &rng)
     {
         // Generate the set of floating parameters in [0,1]
-        Eigen::ArrayXXd population = LHS_samples(count, bounds.size());
+        Eigen::ArrayXXd population = LHS_samples(count, bounds.size(), rng);
 
         auto length_ind = bounds.size();
-        auto gen = get_gen();
         Population out; out.reserve(count);
         for (std::size_t i = 0; i < count; ++i) {
             EArray<T> c(length_ind);
@@ -136,6 +128,7 @@ namespace CEGO{
         std::vector<Population> m_layers;
         std::size_t m_generation = 0;
         moodycamel::ConcurrentQueue<Result> result_queue;
+        std::mt19937 m_rng = get_Mersenne_twister();
         
         void initialize_layers() {
 
@@ -143,7 +136,7 @@ namespace CEGO{
             MutantVector mutants;
             for (auto i = 0; i < Nlayers; ++i) {
                 auto generator = (m_generation_flag == GenerationOptions::LHS) ? LHS_population<T> : random_population<T>;
-                for (auto && ind : generator(m_bounds, Npop_size, get_individual_factory())) {
+                for (auto && ind : generator(m_bounds, Npop_size, get_individual_factory(), m_rng)) {
                     mutants.emplace_back(std::make_pair(i, std::move(ind)));
                 }
             }
@@ -337,7 +330,7 @@ namespace CEGO{
                     // Get the generator function
                     auto generator = get_generator();
                     // Then we pad out the population with new random individuals as needed (they start with an age of zero)
-                    for (auto && ind : generator(m_bounds, missing_individuals_count, get_individual_factory())) {
+                    for (auto && ind : generator(m_bounds, missing_individuals_count, get_individual_factory(), m_rng)) {
                         mutants.emplace_back(std::make_pair(i, std::move(ind)));
                     }
                 }
@@ -541,7 +534,7 @@ namespace CEGO{
             // In serial, generate the mutants; generation of the mutants 
             // is very fast.  Store all mutants in a flat vector with the index of the layer
             for (auto i = 0; i < m_layers.size(); ++i) {
-                for (auto &&el : m_evolver->evolve_layer(m_layers, i, get_bounds(), get_individual_factory())) {
+                for (auto &&el : m_evolver->evolve_layer(m_layers, i, get_bounds(), m_rng, get_individual_factory())) {
                     mutants.emplace_back(std::make_tuple(i, std::move(el)));
                 }
             }
@@ -572,7 +565,7 @@ namespace CEGO{
         void evolve_layer(std::size_t i) {
 
             // Evolve the layer (elements are unevaluated)
-            auto new_layer = m_evolver->evolve_layer(m_layers, i, get_bounds(), get_individual_factory());
+            auto new_layer = m_evolver->evolve_layer(m_layers, i, get_bounds(), m_rng, get_individual_factory());
 
             for (auto j = 0; j < new_layer.size(); ++j) {
                 evaluate_ind(new_layer[j]);
@@ -592,7 +585,7 @@ namespace CEGO{
             // Then we pad out the population with new random individuals as needed (they start with an age of zero)
             if (missing_individuals_count > 0) {
                 auto generator = get_generator();
-                Population random_inds = generator(m_bounds, missing_individuals_count, get_individual_factory());
+                Population random_inds = generator(m_bounds, missing_individuals_count, get_individual_factory(), m_rng);
                 std::move(random_inds.begin(), random_inds.end(), std::back_inserter(new_layer));
             }
 
@@ -640,7 +633,7 @@ namespace CEGO{
                 // Generate new individuals in serial (fast)
                 MutantVector mutants;
                 auto generator = get_generator();
-                for (auto && ind : generator(m_bounds, Npop_size, get_individual_factory())) {
+                for (auto && ind : generator(m_bounds, Npop_size, get_individual_factory(), m_rng)) {
                     mutants.emplace_back(std::make_pair(0,std::move(ind)));
                 }
                 // Evaluate the individuals in parallel

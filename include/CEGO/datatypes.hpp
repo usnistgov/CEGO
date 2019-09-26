@@ -326,6 +326,7 @@ namespace CEGO {
         */
         virtual pIndividual recombine_with(pIndividual &other,
             const std::vector<Bound> &bounds,
+            std::mt19937 &rng,
             const RecombinationFlags &flags) = 0;
     };
 
@@ -374,8 +375,9 @@ namespace CEGO {
             return o;
         }
 
-        virtual pIndividual recombine_with(pIndividual &other,
-            const std::vector<Bound> &bounds,
+        virtual pIndividual recombine_with(pIndividual& other,
+            const std::vector<Bound>& bounds,
+            std::mt19937 &rng,
             const RecombinationFlags &flags = {}) override
         {
 
@@ -390,14 +392,12 @@ namespace CEGO {
 
             EArray<T> cnew(N);
 
-            std::random_device rd;
-            std::mt19937_64 gen(rd());
             // Get the new coefficients
-            if (std::uniform_real_distribution<>(0, 1)(gen) < flags.p_same_w) {
+            if (std::uniform_real_distribution<double>(0, 1)(rng) < flags.p_same_w) {
                 // Different weighting for each coefficient taken from normal
                 // distribution
                 for (auto i = 0; i < N; ++i) {
-                    double k = std::normal_distribution<>(0, flags.uniform_w_stddev)(gen);
+                    double k = std::normal_distribution<double>(0, flags.uniform_w_stddev)(rng);
                     numberish c = c0[i] + k*(c1[i] - c0[i]);
                     if (!bounds.empty() && flags.enforce_bounds) {
                         cnew(i) = bounds[i].enforce_bounds(c);
@@ -409,7 +409,7 @@ namespace CEGO {
             }
             else {
                 // Uniform weighting for all coefficients
-                double k = std::normal_distribution<>(0, flags.nonuniform_w_stddev)(gen);
+                double k = std::normal_distribution<double>(0, flags.nonuniform_w_stddev)(rng);
                 for (auto i = 0; i < N; ++i) {
                     numberish c = c0[i] + k*(c1[i] - c0[i]);
                     if (!bounds.empty() && flags.enforce_bounds) {

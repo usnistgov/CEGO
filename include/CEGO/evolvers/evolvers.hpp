@@ -16,6 +16,7 @@ namespace CEGO {
         virtual Population evolve_layer(const std::vector<Population> &layers, 
             const std::size_t ilayer, 
             const std::vector<Bound> &bounds, 
+            std::mt19937&,
             const IndividualFactory<TYPE> &) const = 0;
         /// Destructor
         virtual ~AbstractEvolver() {};
@@ -33,7 +34,8 @@ namespace CEGO {
         Population evolve_layer(
             const std::vector<Population> &pop_layers, 
             const std::size_t ilayer, 
-            const std::vector<Bound> &bounds, 
+            const std::vector<Bound> &bounds,
+            std::mt19937 &rng,
             const IndividualFactory<TYPE> &factory) const {
             Population empty;
             return differential_evolution<TYPE>(
@@ -41,6 +43,7 @@ namespace CEGO {
                 (ilayer > 0 ? pop_layers[ilayer - 1] : empty),  // older layer (if i > 0)
                 bounds,
                 factory,
+                rng,
                 m_flags);
         }
         /// Set the flags as a JSON dict

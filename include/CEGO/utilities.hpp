@@ -69,5 +69,36 @@ bool is_CI() {
     }
 }
 
+// we only use the address of this function
+static void seed_function() {}
+
+// Adapted from https://stackoverflow.com/a/34490647
+auto get_Mersenne_twister() {
+    // Variables used in seeding
+    static long long seed_counter = 0;
+    int var;
+    void* x = std::malloc(sizeof(int));
+    free(x);
+
+    std::seed_seq seed{
+        // Time
+        static_cast<long long>(std::chrono::high_resolution_clock::now()
+                                   .time_since_epoch()
+                                   .count()),
+        // ASLR
+        static_cast<long long>(reinterpret_cast<intptr_t>(&seed_counter)),
+        static_cast<long long>(reinterpret_cast<intptr_t>(&var)),
+        static_cast<long long>(reinterpret_cast<intptr_t>(x)),
+        static_cast<long long>(reinterpret_cast<intptr_t>(&seed_function)),
+        static_cast<long long>(reinterpret_cast<intptr_t>(&_Exit)),
+        // Thread id
+        static_cast<long long>(
+            std::hash<std::thread::id>()(std::this_thread::get_id())),
+        // counter
+        ++seed_counter };
+    std::mt19937 eng(seed);
+    return eng;
+}
+
 } /* namespace CEGO */
 #endif
