@@ -699,7 +699,7 @@ namespace CEGO{
                 CEGO::DoubleGradientFunction g = [&ind](const EArray<double>& c)->EArray<double> { return ind.gradient(c); };
                 
                 // Store current values
-                EArray<double> x0 = ind.template get_coefficients().cast<double>();
+                EArray<double> x0 = ind.get_coefficients().template cast<double>();
                 auto F0 = ind.get_cost();
                 
                 // Configuration of the gradient minimizer
