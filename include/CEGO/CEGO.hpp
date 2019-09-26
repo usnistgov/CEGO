@@ -80,7 +80,7 @@ namespace CEGO{
                     c(j) = d; break;
                 case CEGO::numberish::types::INT:
                     c(j) = integer; break;
-                case default:
+                default:
                     throw std::invalid_argument("This can't happen...");
                 }
             }
@@ -115,7 +115,7 @@ namespace CEGO{
                     double w = population(i, j);
                     c(j) = int(round(bound.m_lower.as_int()*w + bound.m_upper.as_int()*(1 - w))); break;
                 }
-                case default:
+                default:
                     throw std::invalid_argument("This can't happen...");
                 }
             }
