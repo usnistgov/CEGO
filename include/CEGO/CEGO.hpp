@@ -69,7 +69,7 @@ namespace CEGO{
         auto gen = get_gen();
         Population out; out.reserve(count);
         for (std::size_t i = 0; i < count; ++i) {
-            EArray<T> c(static_cast<Eigen::Index>(length_ind));
+            EArray<T> c(length_ind);
             for (std::size_t j = 0; j < length_ind; ++j) {
                 auto &&bound = bounds[j];
                 double d = 0; int integer = 0;
@@ -80,6 +80,8 @@ namespace CEGO{
                     c(j) = d; break;
                 case CEGO::numberish::types::INT:
                     c(j) = integer; break;
+                case default:
+                    throw std::invalid_argument("This can't happen...");
                 }
             }
             assert(c.size() == length_ind);
@@ -113,6 +115,8 @@ namespace CEGO{
                     double w = population(i, j);
                     c(j) = int(round(bound.m_lower.as_int()*w + bound.m_upper.as_int()*(1 - w))); break;
                 }
+                case default:
+                    throw std::invalid_argument("This can't happen...");
                 }
             }
             assert(c.size() == length_ind);

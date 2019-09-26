@@ -30,6 +30,7 @@ namespace CEGO {
         enum types { EMPTY, INT, DOUBLE } type;
         numberish() { u.d = std::numeric_limits<double>::max(); type = EMPTY; }
         numberish(const int &value) { u.i = value; type = INT; }
+        numberish(const long unsigned int& value) { u.i = value; type = INT; }
         numberish(const double &value) { u.d = value; type = DOUBLE; }
         union id {
             double d;
