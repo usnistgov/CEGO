@@ -388,7 +388,7 @@ namespace CEGO {
             // Get the coefficients of the other one
             EArray<T> c1 = static_cast<NumericalIndividual<T>*>(other.get())->get_coefficients();
 
-            EArray<T> cnew(static_cast<Eigen::Index>(N));
+            EArray<T> cnew(N);
 
             std::random_device rd;
             std::mt19937_64 gen(rd());
