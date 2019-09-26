@@ -28,7 +28,7 @@ namespace CEGO {
 
     struct numberish {
         enum types { EMPTY, INT, DOUBLE } type;
-        numberish() { type = EMPTY; }
+        numberish() { u.d = std::numeric_limits<double>::max(); type = EMPTY; }
         numberish(const int &value) { u.i = value; type = INT; }
         numberish(const double &value) { u.d = value; type = DOUBLE; }
         union id {
@@ -387,7 +387,7 @@ namespace CEGO {
             // Get the coefficients of the other one
             EArray<T> c1 = static_cast<NumericalIndividual<T>*>(other.get())->get_coefficients();
 
-            EArray<T> cnew(N);
+            EArray<T> cnew(static_cast<Eigen::Index>(N));
 
             std::random_device rd;
             std::mt19937_64 gen(rd());
