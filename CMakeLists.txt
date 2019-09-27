@@ -34,7 +34,7 @@ function(attach_includes target)
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/Catch/single_include")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/ThreadPool2")
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/externals/nlohmann")
-  set_target_properties(${snippet_exe} PROPERTIES
+  set_target_properties(${target} PROPERTIES
     CXX_STANDARD 17
     CXX_EXTENSIONS OFF
   )
@@ -45,6 +45,19 @@ function(attach_includes target)
       target_sources(${target} PRIVATE "${CMAKE_SOURCE_DIR}/externals/Eigen/debug/msvc/eigen.natvis")
   endif()
 endfunction()
+
+# Always build the interface target 
+addlibrary(CEGO INTERFACE)
+target_include_directories(CEGO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(CEGO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/externals/Eigen")
+target_include_directories(CEGO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/externals/autodiff")
+target_include_directories(CEGO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/externals/Catch/single_include")
+target_include_directories(CEGO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/externals/ThreadPool2")
+target_include_directories(CEGO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/externals/nlohmann")
+set_target_properties(CEGO PROPERTIES
+    CXX_STANDARD 17
+    CXX_EXTENSIONS OFF
+)
 
 if (NOT CEGO_NO_PYTHON)
   # Build pybind11 python module
