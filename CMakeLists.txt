@@ -47,7 +47,7 @@ function(attach_includes target)
 endfunction()
 
 # Always build the interface target 
-addlibrary(CEGO INTERFACE)
+add_library(CEGO INTERFACE)
 target_include_directories(CEGO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(CEGO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/externals/Eigen")
 target_include_directories(CEGO PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/externals/autodiff")
