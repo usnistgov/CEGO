@@ -432,15 +432,18 @@ namespace CEGO{
         std::vector<std::map<std::string, double> > cost_stats_each_layer() {
             std::vector<std::map<std::string, double> > out;
             for (auto &layer : m_layers) {
-                Eigen::ArrayXd cost_layer(layer.size());
+                Eigen::ArrayXd cost_layer(layer.size()), age_layer(layer.size());
                 for (auto i = 0; i < layer.size(); ++i) {
                     cost_layer(i) = layer[i]->get_cost();
+                    age_layer(i) = layer[i]->get_age();
                 }
                 std::map<std::string, double> this_layer_map;
-                this_layer_map["max"] = cost_layer.maxCoeff();
-                this_layer_map["min"] = cost_layer.minCoeff();
+                this_layer_map["max(cost)"] = cost_layer.maxCoeff();
+                this_layer_map["min(cost)"] = cost_layer.minCoeff();
+                this_layer_map["mean(cost)"] = cost_layer.mean();
                 // See https://en.wikipedia.org/wiki/Standard_deviation#Discrete_random_variable
-                this_layer_map["stddev"] = sqrt((cost_layer - cost_layer.mean()).square().sum()/cost_layer.size());
+                this_layer_map["stddev(cost)"] = sqrt((cost_layer - cost_layer.mean()).square().sum()/cost_layer.size());
+                this_layer_map["mean(age)"] = age_layer.mean();
                 out.push_back(this_layer_map);
             }
             return out;

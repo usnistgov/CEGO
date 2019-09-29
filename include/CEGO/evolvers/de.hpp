@@ -201,6 +201,7 @@ Population differential_evolution(const Population &this_layer,
             candidate_ages.push_back(cand->age());
         }
         outputs.back()->set_age(*std::max_element(candidate_ages.cbegin(), candidate_ages.cend()));
+        outputs.back()->set_age(0);
     }
     return outputs;
 }
