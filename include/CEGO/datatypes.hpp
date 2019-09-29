@@ -301,6 +301,8 @@ namespace CEGO {
         void increase_age() { m_age++; }
         /// Return the age of the individual
         std::size_t age() const { return m_age; }
+        /// Return the age of the individual
+        std::size_t get_age() const { return m_age; }
         /// Set the age of the individual
         void set_age(std::size_t age) { m_age = age; }
         /// Return the cost
