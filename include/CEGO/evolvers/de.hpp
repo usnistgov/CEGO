@@ -115,7 +115,7 @@ inline void from_json(const nlohmann::json& j, DifferentialEvolutionFlags& f) {
     f.Fmin = j.at("Fmin").get<double>();
     f.Fmax = j.at("Fmax").get<double>(); 
     f.CR = j.at("CR").get<double>();
-    f.prob_this_layer = j.get_at("prob_this_layer")();
+    j.at("prob_this_layer").get_to(f.prob_this_layer);
 }
 
 /** Do differential evolution to generate a given population of individuals.  The individuals are not yet evaluated, 
@@ -154,7 +154,7 @@ Population differential_evolution(const Population &this_layer,
             if (failure_count > 10000) {
                 throw std::range_error("Cannot populate individuals for differential evolution");
             }
-            if (older_layer.size() == 0 || float_dis(rng) < flags.prob_this) {
+            if (older_layer.size() == 0 || float_dis(rng) < flags.prob_this_layer) {
                 // Pull from this generation
                 auto k = static_cast<int>(this_int_selector(rng));
                 if (uniques.find(k) == uniques.end()) {
