@@ -2,6 +2,8 @@
 #define CEGO_UTILITIES_H
 
 #include <set>
+#include <iostream>
+#include <fstream>
 
 namespace CEGO{
 
@@ -69,10 +71,9 @@ bool is_CI() {
     }
 }
 
-// we only use the address of this function
-static void seed_function() {}
-
 // Adapted from https://stackoverflow.com/a/34490647
+
+static void seed_function() {} // we only use the address of this function
 auto get_Mersenne_twister() {
     // Variables used in seeding
     static long long seed_counter = 0;
@@ -98,6 +99,16 @@ auto get_Mersenne_twister() {
         ++seed_counter };
     std::mt19937 eng(seed);
     return eng;
+}
+
+// Adapted from https://stackoverflow.com/a/116220/1360263
+inline std::string get_file_contents(const std::string& filename) {
+    using std::ios;
+    std::ifstream ifs(filename.c_str(), ios::in | ios::binary);
+    if (!ifs) {
+        throw std::invalid_argument("filename cannot be opened: " + filename);
+    }
+    return static_cast<std::stringstream const&>(std::stringstream() << ifs.rdbuf()).str();
 }
 
 } /* namespace CEGO */
