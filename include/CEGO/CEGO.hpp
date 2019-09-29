@@ -435,7 +435,7 @@ namespace CEGO{
                 Eigen::ArrayXd cost_layer(layer.size()), age_layer(layer.size());
                 for (auto i = 0; i < layer.size(); ++i) {
                     cost_layer(i) = layer[i]->get_cost();
-                    age_layer(i) = layer[i]->get_age();
+                    age_layer(i) = static_cast<double>(layer[i]->get_age());
                 }
                 std::map<std::string, double> this_layer_map;
                 this_layer_map["max(cost)"] = cost_layer.maxCoeff();
