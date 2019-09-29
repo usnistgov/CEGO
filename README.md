@@ -50,6 +50,7 @@ To get started, you should check out the Jupyter notebooks in the notebooks fold
 
 ## Installation
 
+
 ### Prerequisites
 
 You will need:
@@ -130,3 +131,9 @@ git submodule update --init
 ```
 
 For other options, see the cmake docs
+
+
+## Debugging
+
+* ``lstopo`` from the hwloc package can tell you the physical configuration of the cores
+* ``taskset --cpu-list 0-23 nohup ./Main &`` will run on the first 24 threads (or you could split up in a different way)
