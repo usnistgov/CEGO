@@ -101,12 +101,13 @@ pIndividual DE1exp(const pIndividual &i0, const pIndividual &i1, const pIndividu
 struct DifferentialEvolutionFlags {
     std::size_t Nelite = 0; ///< The number of protected individuals in the elite
     double Fmin = 0.9, ///< The minimum value of F for DE 
-           Fmax = 0.9; ///< The maximum value of F for DE
-    double CR = 0.9;   ///< The crossover rate
+           Fmax = 0.9, ///< The maximum value of F for DE
+           CR = 0.9,   ///< The crossover rate
+           prob_this_layer = 0.95; ///< The probability of selecting candidate from this layer
 };
 
 inline void to_json(nlohmann::json& j, const DifferentialEvolutionFlags& f) {
-    j = nlohmann::json{ { "Nelite", f.Nelite },{ "Fmin", f.Fmin },{ "Fmax", f.Fmax },{"CR",f.CR} };
+    j = nlohmann::json{ { "Nelite", f.Nelite },{ "Fmin", f.Fmin },{ "Fmax", f.Fmax },{"CR",f.CR},{"prob_this_layer",f.prob_this_layer} };
 }
 
 inline void from_json(const nlohmann::json& j, DifferentialEvolutionFlags& f) {
@@ -114,6 +115,7 @@ inline void from_json(const nlohmann::json& j, DifferentialEvolutionFlags& f) {
     f.Fmin = j.at("Fmin").get<double>();
     f.Fmax = j.at("Fmax").get<double>(); 
     f.CR = j.at("CR").get<double>();
+    f.prob_this_layer = j.get_at("prob_this_layer")();
 }
 
 /** Do differential evolution to generate a given population of individuals.  The individuals are not yet evaluated, 
@@ -152,7 +154,7 @@ Population differential_evolution(const Population &this_layer,
             if (failure_count > 10000) {
                 throw std::range_error("Cannot populate individuals for differential evolution");
             }
-            if (older_layer.size() == 0 || float_dis(rng) < 0.8) {
+            if (older_layer.size() == 0 || float_dis(rng) < flags.prob_this) {
                 // Pull from this generation
                 auto k = static_cast<int>(this_int_selector(rng));
                 if (uniques.find(k) == uniques.end()) {
