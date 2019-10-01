@@ -229,9 +229,18 @@ namespace CEGO{
 
         /// Pick one of the builtin evolvers
         void set_builtin_evolver(BuiltinEvolvers e) {
+            using sel = differential_evolution_selector;
+            using cr = differential_evolution_crossover;
             switch (e) {
             case BuiltinEvolvers::differential_evolution:
-                m_evolver.reset(new DE1BinEvolver<T>); break;
+            case BuiltinEvolvers::differential_evolution_rand1bin: 
+                m_evolver.reset(new DEEvolver<T>(sel::rand, cr::bin1)); break;
+            case BuiltinEvolvers::differential_evolution_rand1exp:
+                m_evolver.reset(new DEEvolver<T>(sel::rand, cr::exp1)); break;
+            case BuiltinEvolvers::differential_evolution_best1bin:
+                m_evolver.reset(new DEEvolver<T>(sel::best, cr::bin1)); break; 
+            case BuiltinEvolvers::differential_evolution_best1exp:
+                m_evolver.reset(new DEEvolver<T>(sel::best, cr::exp1)); break;
             default:
                 throw std::invalid_argument("Invalid builtin evolver");
             }

@@ -88,13 +88,14 @@ int do_one()
    
     auto Ncalls = 0;
     CEGO::CostFunction<double> cost_wrapper = [&rp](const CEGO::AbstractIndividual*pind) {return rp.objective(pind); };
-    auto Nlayers = 1;
-    auto layers = CEGO::Layers<double>(cost_wrapper, bounds.size(), 1000, Nlayers, 3);
+    auto Ntotal_individuals = 1000;
+    auto Nlayers = 7;
+    auto layers = CEGO::Layers<double>(cost_wrapper, bounds.size(), Ntotal_individuals/Nlayers, Nlayers, 3);
     layers.parallel = true;
     layers.parallel_threads = 6;
     layers.set_bounds(bounds);
     layers.set_generation_mode(CEGO::GenerationOptions::LHS);
-    layers.set_builtin_evolver(CEGO::BuiltinEvolvers::differential_evolution);
+    layers.set_builtin_evolver(CEGO::BuiltinEvolvers::differential_evolution_best1bin);
     auto f = [&rp](const CEGO::EArray<double>& c) {return rp.objective<double>(c); };
     auto f2 = [&rp](const CEGO::EArray<std::complex< double >>& c) {return rp.objective<std::complex<double>>(c); };
     layers.add_gradient(f, f2);
@@ -103,7 +104,7 @@ int do_one()
     flags["Nelite"] = 1;
     flags["Fmin"] = 0.1;
     flags["Fmax"] = 1.1;
-    flags["CR"] = 1;
+    flags["CR"] = 0.9;
     layers.set_evolver_flags(flags);
 
     std::vector<double> best_costs; 

@@ -28,38 +28,44 @@ namespace CEGO{
     // *****************************************************************************************************
     // *****************************************************************************************************
 
+    /// Enumeration for how to select the first individual to go into the crossover
+    enum class differential_evolution_selector { rand, best };
+    /// Enumeration for how to crossover
+    enum class differential_evolution_crossover { bin1, exp1, bin2, exp2 };
+
     /**
     @brief Generate one mutant individual given three individuals.  This is the one-difference-vector mutant generator of Storn and Price.
     */
-    template<typename T>
-    EArray<T> gen_1diff(const EArray<T>&c1, const EArray<T> &c2, const EArray<T>&c3, T F) {
+    template<typename TYPE>
+    EArray<TYPE> gen_1diff(const Population &inds, TYPE F) {
+        auto get = [](const pIndividual& i) {
+            return static_cast<const NumericalIndividual<TYPE>&>(*i).get_coefficients();
+        };
+        const auto& c1 = get(inds[0]), &c2 = get(inds[1]), &c3 = get(inds[2]);
         assert(c1.size() == c2.size());
         assert(c2.size() == c3.size()); 
         return c1 + F*(c2 - c3);
     }
 
-    // *****************************************************************************************************
-    // *****************************************************************************************************
-    //                                             CROSSOVER
-    // *****************************************************************************************************
-    // *****************************************************************************************************
+// *****************************************************************************************************
+// *****************************************************************************************************
+//                                             CROSSOVER
+// *****************************************************************************************************
+// *****************************************************************************************************
 
-
-
-template<class RNG, typename TYPE>
-pIndividual DE1bin(const NumericalIndividual<TYPE>&i0, 
-                   const NumericalIndividual<TYPE>&i1,
-                   const NumericalIndividual<TYPE>&i2,
-                   const NumericalIndividual<TYPE>&i3,
-                   RNG &gen, const IndividualFactory<TYPE> &factory, double F = 0.5, double CR = 0.9) 
+template<typename TYPE>
+pIndividual DE1bin(const pIndividual& base_individual, 
+                   const Population &others,
+                   std::mt19937&gen, 
+                   const IndividualFactory<TYPE> &factory, 
+                   double F = 0.5, 
+                   double CR = 0.9)
 {   
     // Copy of the coefficients for the base individual
-    auto c0 = i0.get_coefficients();
-    // The mutant obtained from original individual i1 and two others (i2 and i3) forming 
+    auto c0 = static_cast<const NumericalIndividual<TYPE>&>(*base_individual).get_coefficients();
+    // The mutant obtained from individual i1 and the two others (i2 and i3) forming 
     // the difference
-    const EArray<TYPE> cm = gen_1diff<TYPE>(i1.get_coefficients(),
-                                      i2.get_coefficients(),
-                                      i3.get_coefficients(), F);
+    const EArray<TYPE> cm = gen_1diff<TYPE>(others, F);
     auto Ncoeff = c0.size();
     // R is the index that will definitely be used from the perturbed vector
     std::size_t R = std::uniform_int_distribution<std::size_t>(0, Ncoeff-1)(gen);
@@ -75,17 +81,19 @@ pIndividual DE1bin(const NumericalIndividual<TYPE>&i0,
     return pIndividual(factory(std::move(c0)));
 };
 
-template<typename T, class RNG, typename TYPE>
-pIndividual DE1exp(const pIndividual &i0, const pIndividual &i1, const pIndividual &i2, const pIndividual &i3,
-                   RNG &gen, const IndividualFactory<TYPE> &factory, double F = 1.0, double CR = 0.9)
+template<typename TYPE>
+pIndividual DE1exp(const pIndividual &base_individual, 
+                   const Population& others,
+                   std::mt19937 &gen,
+                   const IndividualFactory<TYPE> &factory, 
+                   double F = 1.0, 
+                   double CR = 0.9)
 {
     // Copy of the coefficients
-    auto c0 = static_cast<T*>(i0.get())->get_coefficients();
-    // The mutant obtained from original individual i1 and two others (i2 and i3), forming 
+    auto c0 = static_cast<const NumericalIndividual<TYPE>&>(*base_individual).get_coefficients();
+    // The mutant obtained from individual i1 and two others (i2 and i3), forming 
     // the difference
-    const auto cm = gen_1diff(static_cast<T*>(i1.get())->get_coefficients(),
-                              static_cast<T*>(i2.get())->get_coefficients(),
-                              static_cast<T*>(i3.get())->get_coefficients(), F);
+    const auto cm = gen_1diff(others, F);
     auto Ncoeff = c0.size();
     std::uniform_real_distribution<> unireal(0, 1);
     // n is the first index in the vector where a change is to be tried
@@ -125,6 +133,8 @@ template<typename T>
 Population differential_evolution(const Population &this_layer, 
                                   const Population &older_layer, 
                                   const std::vector<Bound> &bounds, 
+                                  const differential_evolution_selector selector,
+                                  const differential_evolution_crossover crossover,
                                   const IndividualFactory<T> &factory, 
                                   std::mt19937 &rng,
                                   const DifferentialEvolutionFlags &flags)
@@ -147,9 +157,17 @@ Population differential_evolution(const Population &this_layer,
         Population candidates;
         std::set<int> uniques; uniques.insert(static_cast<int>(i));
 
+        using sel = differential_evolution_selector;
+        if (selector == sel::best) {
+            // The best individual is always in index 0 because sorted by cost function
+            candidates.emplace_back(this_layer[0]->copy());
+        }
+
+        int num_ind_needed = 3 - static_cast<int>(candidates.size());
+
         // Create a new individual
         std::size_t failure_count = 0;
-        for (auto j = 0; j < 3; ++j)
+        for (auto j = 0; j < num_ind_needed; ++j)
         {
             if (failure_count > 10000) {
                 throw std::range_error("Cannot populate individuals for differential evolution");
@@ -177,12 +195,18 @@ Population differential_evolution(const Population &this_layer,
                 }
             }
         }
-        
-        auto other = DE1bin(static_cast<const NumericalIndividual<T>&>(*this_layer[i]),
-                            static_cast<const NumericalIndividual<T>&>(*candidates[0]),
-                            static_cast<const NumericalIndividual<T>&>(*candidates[1]),
-                            static_cast<const NumericalIndividual<T>&>(*candidates[2]),
-                            rng, factory, F, flags.CR);
+
+        pIndividual other;
+        using cr = differential_evolution_crossover;
+        switch (crossover) {
+        case cr::bin1:
+            other = DE1bin(this_layer[i], candidates, rng, factory, F, flags.CR); break;
+        case cr::exp1:
+            other = DE1exp(this_layer[i], candidates, rng, factory, F, flags.CR); break;
+        default:
+            throw std::invalid_argument("Not sure how this is possible, but crossver flag is invalid");
+        }
+
         // Impose the bounds if bounds are provided
         if (!bounds.empty()) {
             const auto c = static_cast<const NumericalIndividual<T>&>(*other).get_coefficients();

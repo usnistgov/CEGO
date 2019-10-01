@@ -7,7 +7,13 @@
 
 namespace CEGO {
 
-    enum class BuiltinEvolvers {differential_evolution};
+    enum class BuiltinEvolvers {
+        differential_evolution, 
+        differential_evolution_rand1bin, 
+        differential_evolution_rand1exp,
+        differential_evolution_best1bin,
+        differential_evolution_best1exp
+    };
 
     template<typename TYPE>
     class AbstractEvolver
@@ -26,22 +32,31 @@ namespace CEGO {
         virtual nlohmann::json get_flags() const = 0;
     };
 
+    /// This is the generic function that calls the appropriate DE solver
     template<typename TYPE>
-    class DE1BinEvolver : public AbstractEvolver<TYPE> {
+    class DEEvolver : public AbstractEvolver<TYPE> {
     private:
         DifferentialEvolutionFlags m_flags;
+        const differential_evolution_selector m_selector; 
+        const differential_evolution_crossover m_crossover;
     public:
+        DEEvolver(const differential_evolution_selector selector, 
+                  const differential_evolution_crossover cross)
+            : m_selector(selector), m_crossover(cross) {};
         Population evolve_layer(
             const std::vector<Population> &pop_layers, 
             const std::size_t ilayer, 
             const std::vector<Bound> &bounds,
             std::mt19937 &rng,
-            const IndividualFactory<TYPE> &factory) const {
+            const IndividualFactory<TYPE> &factory) const 
+        {
             Population empty;
             return differential_evolution<TYPE>(
-                pop_layers[ilayer],
+                pop_layers[ilayer], // this layer
                 (ilayer > 0 ? pop_layers[ilayer - 1] : empty),  // older layer (if i > 0)
                 bounds,
+                m_selector,
+                m_crossover,
                 factory,
                 rng,
                 m_flags);
