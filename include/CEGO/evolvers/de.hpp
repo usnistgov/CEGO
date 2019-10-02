@@ -47,6 +47,20 @@ namespace CEGO{
         return c1 + F*(c2 - c3);
     }
 
+    /**
+    @brief Generate one mutant individual given three individuals.  This is the one-difference-vector mutant generator of Storn and Price.
+    */
+    template<typename TYPE>
+    EArray<TYPE> gen_2diff(const Population& inds, TYPE F) {
+        auto get = [](const pIndividual& i) {
+            return static_cast<const NumericalIndividual<TYPE>&>(*i).get_coefficients();
+        };
+        const auto& c1 = get(inds[0]), & c2 = get(inds[1]), & c3 = get(inds[2]), & c4 = get(inds[3]), & c5 = get(inds[4]);
+        assert(c1.size() == c2.size());
+        assert(c2.size() == c3.size());
+        return c1 + F * (c2 + c3 - c4 - c5);
+    }
+
 // *****************************************************************************************************
 // *****************************************************************************************************
 //                                             CROSSOVER
@@ -65,7 +79,7 @@ pIndividual DE1bin(const pIndividual& base_individual,
     auto c0 = static_cast<const NumericalIndividual<TYPE>&>(*base_individual).get_coefficients();
     // The mutant obtained from individual i1 and the two others (i2 and i3) forming 
     // the difference
-    const EArray<TYPE> cm = gen_1diff<TYPE>(others, F);
+    const EArray<TYPE> cm = (others.size() == 3) ? gen_1diff<TYPE>(others, F) : gen_2diff<TYPE>(others, F);
     auto Ncoeff = c0.size();
     // R is the index that will definitely be used from the perturbed vector
     std::size_t R = std::uniform_int_distribution<std::size_t>(0, Ncoeff-1)(gen);
@@ -93,7 +107,7 @@ pIndividual DE1exp(const pIndividual &base_individual,
     auto c0 = static_cast<const NumericalIndividual<TYPE>&>(*base_individual).get_coefficients();
     // The mutant obtained from individual i1 and two others (i2 and i3), forming 
     // the difference
-    const auto cm = gen_1diff(others, F);
+    const EArray<TYPE> cm = (others.size() == 3) ? gen_1diff<TYPE>(others, F) : gen_2diff<TYPE>(others, F);
     auto Ncoeff = c0.size();
     std::uniform_real_distribution<> unireal(0, 1);
     // n is the first index in the vector where a change is to be tried
@@ -162,8 +176,9 @@ Population differential_evolution(const Population &this_layer,
             // The best individual is always in index 0 because sorted by cost function
             candidates.emplace_back(this_layer[0]->copy());
         }
-
-        int num_ind_needed = 3 - static_cast<int>(candidates.size());
+        using cr = differential_evolution_crossover;
+        int total_ind_needed = (crossover == cr::bin1 || crossover == cr::exp1) ? 3 : 5;
+        int num_ind_needed = total_ind_needed - static_cast<int>(candidates.size());
 
         // Create a new individual
         std::size_t failure_count = 0;

@@ -12,7 +12,11 @@ namespace CEGO {
         differential_evolution_rand1bin, 
         differential_evolution_rand1exp,
         differential_evolution_best1bin,
-        differential_evolution_best1exp
+        differential_evolution_best1exp,
+        differential_evolution_rand2bin,
+        differential_evolution_rand2exp,
+        differential_evolution_best2bin,
+        differential_evolution_best2exp
     };
 
     template<typename TYPE>
