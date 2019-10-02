@@ -215,8 +215,10 @@ Population differential_evolution(const Population &this_layer,
         using cr = differential_evolution_crossover;
         switch (crossover) {
         case cr::bin1:
+        case cr::bin2:
             other = DE1bin(this_layer[i], candidates, rng, factory, F, flags.CR); break;
         case cr::exp1:
+        case cr::exp2:
             other = DE1exp(this_layer[i], candidates, rng, factory, F, flags.CR); break;
         default:
             throw std::invalid_argument("Not sure how this is possible, but crossver flag is invalid");
