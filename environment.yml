@@ -2,8 +2,9 @@
 
 name: CEGO
 dependencies:
-  - python=3.6
+  - python=3.8
   - matplotlib
   - scipy
+  - pip
   - pip:
     - "git+git://github.com/usnistgov/CEGO.git"
