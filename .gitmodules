@@ -13,3 +13,6 @@
 [submodule "externals/autodiff"]
 	path = externals/autodiff
 	url = https://github.com/autodiff/autodiff
+[submodule "externals/Eigen"]
+	path = externals/Eigen
+	url = https://gitlab.com/libeigen/eigen.git
