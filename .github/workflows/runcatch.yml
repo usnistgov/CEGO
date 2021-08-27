@@ -20,8 +20,10 @@ jobs:
         python-version: 3.8
     - name: mkdir
       run: mkdir -p build
+    - name: Python build
+      run: ${{env.pythonLocation}}/python setup.py build
     - name: cmake config
-      run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCEGO_ALL=ON -DPYTHON_EXECUTABLE=${{env.pythonLocation}}/python
+      run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCEGO_ALL=ON -DCEGO_NO_PYTHON=ON
     - name: cmake make
       run: cd build && cmake --build . --config Release
     - name: run Catch tests
