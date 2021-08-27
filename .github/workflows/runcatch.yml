@@ -19,6 +19,6 @@ jobs:
     - name: cmake config
       run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCEGO_ALL=ON
     - name: cmake make
-      run: cd build && cmake --build build --config Release
+      run: cd build && cmake --build . --config Release
     - name: run Catch tests
       run: cd build && ctest --verbose
