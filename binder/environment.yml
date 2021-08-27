@@ -1,10 +1,10 @@
 # This .yml file is used to specify the conda environment that should be loaded into the binder instance
-
 name: CEGO
 dependencies:
-  - python=3.8
+  - python=3.9
   - matplotlib
   - scipy
+  - numpy
+  - jupyter
+  - notebook
   - pip
-  - pip:
-    - "git+git://github.com/usnistgov/CEGO.git"
