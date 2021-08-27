@@ -232,7 +232,7 @@ namespace CEGO {
                     i = static_cast<int>(val);
                 }
                 else {
-                    i = static_cast<int>(round(val));
+                    i = double2int(val);
                 }
 
                 // Input value is in range
