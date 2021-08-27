@@ -37,28 +37,36 @@ namespace CEGO{
     @brief Generate one mutant individual given three individuals.  This is the one-difference-vector mutant generator of Storn and Price.
     */
     template<typename TYPE>
-    EArray<TYPE> gen_1diff(const Population &inds, TYPE F) {
+    EArray<TYPE> gen_1diff(const Population &inds, double F) {
         auto get = [](const pIndividual& i) {
             return static_cast<const NumericalIndividual<TYPE>&>(*i).get_coefficients();
         };
         const auto& c1 = get(inds[0]), &c2 = get(inds[1]), &c3 = get(inds[2]);
         assert(c1.size() == c2.size());
         assert(c2.size() == c3.size()); 
-        return c1 + F*(c2 - c3);
+        EArray<TYPE> o(c1.size());
+        for (auto i = 0; i < c1.size(); ++i) {
+            o(i) = c1(i) + F * (c2(i) - c3(i));
+        }
+        return o;
     }
 
     /**
     @brief Generate one mutant individual given three individuals.  This is the one-difference-vector mutant generator of Storn and Price.
     */
     template<typename TYPE>
-    EArray<TYPE> gen_2diff(const Population& inds, TYPE F) {
+    EArray<TYPE> gen_2diff(const Population& inds, double F) {
         auto get = [](const pIndividual& i) {
             return static_cast<const NumericalIndividual<TYPE>&>(*i).get_coefficients();
         };
         const auto& c1 = get(inds[0]), & c2 = get(inds[1]), & c3 = get(inds[2]), & c4 = get(inds[3]), & c5 = get(inds[4]);
         assert(c1.size() == c2.size());
         assert(c2.size() == c3.size());
-        return c1 + F * (c2 + c3 - c4 - c5);
+        EArray<TYPE> o(c1.size());
+        for (auto i = 0; i < c1.size(); ++i) {
+            o(i) = c1(i) + F * (c2(i) + c3(i) - c4(i) - c5(i));
+        }
+        return o;
     }
 
 // *****************************************************************************************************

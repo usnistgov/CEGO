@@ -180,20 +180,26 @@ int main(){
 }
 #else
 
+#include "CEGOversion.hpp"
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/operators.h>
 #include <pybind11/functional.h>
 #include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
 
 namespace py = pybind11;
+
+template <typename T> using RefEArray = Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1, 0, Eigen::Dynamic, 1>>;
 
 template<class T >
 void upgrade_Layers(py::class_<CEGO::Layers<T>> &layers){
     using namespace CEGO;
     typedef Layers<T> MyLayers;
+      
 
-    layers.def(py::init<std::function<double(const EArray<T> &)>&, int, int, int, int>());
+    layers.def(py::init<std::function<double(const std::vector<T> &)>&, int, int, int, int>());
     layers.def("do_generation", &MyLayers::do_generation);
     layers.def("print_diagnostics", &MyLayers::print_diagnostics);
     layers.def("get_best", &MyLayers::get_best);
@@ -222,6 +228,19 @@ void init_PyCEGO(py::module &m) {
         .def(py::init<const int &>())
         .def("as_double",&numberish::as_double)
         .def("as_int", &numberish::as_int)
+        
+        .def(double() * py::self)
+        .def(py::self * double())
+        .def(py::self * py::self)
+
+        .def(double() + py::self)
+        .def(py::self + double())
+        .def(py::self + py::self)
+
+        .def(double() - py::self)
+        .def(py::self - double())
+        .def(py::self - py::self)
+        
         ;
 
     py::class_<Result>(m, "Result")
@@ -260,12 +279,27 @@ void init_PyCEGO(py::module &m) {
     py::class_<NumberishLayers> numberish_layers(m, "NumberishLayers");
     upgrade_Layers(numberish_layers);
 
+    m.def("indexer", [](std::function<CEGO::numberish(const RefEArray<CEGO::numberish> &)> &f){ 
+        EArray<CEGO::numberish> a(10); a = 3.9; f(a); return;
+    });
+
+    m.def("first_entry", [](const std::vector<CEGO::numberish> x) {
+        return x[0];
+    });
+
+    m.def("mutator", [](
+        std::function<void(const py::array_t<CEGO::numberish>&)>& f,
+        const py::array_t<CEGO::numberish>& x) {
+        f(x);
+    });
+
     m.def("LHS_samples", &LHS_samples);
 
 }
 
 PYBIND11_MODULE(PyCEGO, m){
     m.doc() = "PyCEGO: Python wrapper of CEGO implementation of Ian Bell in C++17";
+    m.attr("__version__") = CEGOVERSION;
     init_PyCEGO(m);
 }
 

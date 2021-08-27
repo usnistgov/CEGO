@@ -26,25 +26,32 @@ namespace CEGO {
         return std::lround(inval);
     }
 
+    /// \brief A small class that allows for integer and double numbers
+    ///  
+    /// \note Integers up to 9,007,199,254,740,993 in double precision can be exactly represented: https://stackoverflow.com/a/3793950, so we use a double as the data store.
     struct numberish {
+    public:
+        double u_;
+        
+    public:
         enum types { EMPTY, INT, DOUBLE } type;
-        numberish() { u.d = std::numeric_limits<double>::max(); type = EMPTY; }
-        numberish(const int &value) { u.i = value; type = INT; }
-        numberish(const long unsigned int& value) { u.i = value; type = INT; }
-        numberish(const double &value) { u.d = value; type = DOUBLE; }
-        union id {
-            double d;
-            int i;
-        } u;
-        void operator=(const int& value) { u.i = value; type = INT; };
-        void operator=(const double& value) { u.d = value; type = DOUBLE; };
+        
+        numberish() { u_ = std::numeric_limits<double>::max(); type = EMPTY; }
+        numberish(const int &value) { u_ = value; type = INT; }
+        numberish(const long unsigned int& value) { u_ = static_cast<int>(value); type = INT; }
+        numberish(const double &value) { u_ = value; type = DOUBLE; }
+
+        const double u() const { return u_; }
+
+        void operator=(const int& value) { u_ = value; type = INT; };
+        void operator=(const double& value) { u_ = value; type = DOUBLE; };
         numberish operator-(const numberish& value) const {
             if (type != value.type) { throw std::logic_error("Cannot mix types in the - operator for numberish type"); }
             switch (type) {
             case INT:
-                return numberish(u.i - static_cast<int>(value));
+                return numberish(static_cast<int>(u()) - static_cast<int>(value));
             case DOUBLE:
-                return numberish(u.d - static_cast<double>(value));
+                return numberish(static_cast<double>(u()) - static_cast<double>(value));
             default:
                 throw std::logic_error("Bad type");
             }
@@ -53,20 +60,20 @@ namespace CEGO {
             if (type != value.type) { throw std::logic_error("Cannot mix types in the + operator for numberish type"); }
             switch (type) {
             case INT:
-                return numberish(u.i + static_cast<int>(value));
+                return numberish(static_cast<int>(u()) + static_cast<int>(value));
             case DOUBLE:
-                return numberish(u.d + static_cast<double>(value));
+                return numberish(static_cast<double>(u()) + static_cast<double>(value));
             default:
                 throw std::logic_error("Bad type");
             }
         };
         numberish operator*(const numberish& value) const {
-            if (type != value.type) { throw std::logic_error("Cannot mix types in the * operator for numberish type"); }
+            if (type != value.type) { throw std::logic_error("Cannot mix types in the * operator for numberish type; tried to do: " + to_string() + "*" + value.to_string()); }
             switch (type) {
             case INT:
-                return numberish(u.i * static_cast<int>(value));
+                return numberish(static_cast<int>(u()) * static_cast<int>(value));
             case DOUBLE:
-                return numberish(u.d * static_cast<double>(value));
+                return numberish(static_cast<double>(u()) * static_cast<double>(value));
             default:
                 throw std::logic_error("Bad type");
             }
@@ -76,11 +83,11 @@ namespace CEGO {
         operator int() const {
             if (type == DOUBLE) { 
                 throw std::logic_error("Cannot downcast from double to int"); }
-            return u.i;
+            return static_cast<int>(u());
         };
         /// Return the value as a double
         double as_double() const {
-            return static_cast<double>(*this);
+            return static_cast<double>(u());
         }
         /// Return the value as an integer
         int as_int() const {
@@ -88,8 +95,8 @@ namespace CEGO {
         }
         /// Get the value as a double - stored integer will upcast to a double
         operator double() const {
-            if (type == INT) { return static_cast<double>(u.i); }
-            else if (type == DOUBLE) { return u.d; }
+            if (type == INT) { return static_cast<double>(u()); }
+            else if (type == DOUBLE) { return static_cast<double>(u()); }
             else {
                 throw std::logic_error("Bad type");
             }
@@ -98,16 +105,16 @@ namespace CEGO {
         std::string to_string() const {
             switch (type) {
             case INT:
-                return std::to_string(u.i);
+                return std::to_string(static_cast<int>(u()));
             case DOUBLE:
-                return std::to_string(u.d);
+                return std::to_string(static_cast<double>(u()));
             default:
-                throw std::logic_error("Bad type");
+                throw std::logic_error("Bad type to to_string");
             }
         };
     };
 
-    inline numberish operator * (double k, const numberish& n)
+    inline numberish operator* (double k, const numberish& n)
     {
         if (n.type == numberish::types::DOUBLE) {
             double val = static_cast<double>(n)*k;
@@ -118,7 +125,11 @@ namespace CEGO {
             return numberish(val);
         }
     }
-    inline numberish operator + (double k, const numberish& n)
+    inline numberish operator* (const numberish& n, double d)
+    {
+        return d*n;
+    }
+    inline numberish operator+ (double k, const numberish& n)
     {
         if (n.type == numberish::types::DOUBLE) {
             double val = static_cast<double>(n) + k;
@@ -128,6 +139,25 @@ namespace CEGO {
             int val = double2int(static_cast<int>(n) + k);
             return numberish(val);
         }
+    }
+    inline numberish operator+ (const numberish& n, double d)
+    {
+        return d+n;
+    }
+    inline numberish operator- (double k, const numberish& n)
+    {
+        if (n.type == numberish::types::DOUBLE) {
+            double val = k-static_cast<double>(n);
+            return numberish(val);
+        }
+        else {
+            int val = double2int(k - static_cast<int>(n));
+            return numberish(val);
+        }
+    }
+    inline numberish operator- (const numberish& n, double d)
+    {
+        return -1.0*(d-n);
     }
 
     inline std::string to_string(const numberish &n) {
@@ -168,10 +198,10 @@ namespace CEGO {
         }
         numberish enforce_bounds(const numberish &n) const {
             if (m_upper.type == numberish::types::DOUBLE) {
-                return std::min(m_upper.u.d, std::max(m_lower.u.d, static_cast<double>(n)));
+                return std::min(static_cast<double>(m_upper.u()), std::max(m_lower.u(), static_cast<double>(n)));
             }
             else if (m_upper.type == numberish::types::INT) {
-                return std::min(m_upper.u.i, std::max(m_lower.u.i, static_cast<int>(n)));
+                return std::min(static_cast<int>(m_upper.u()), std::max(static_cast<int>(m_lower.u()), static_cast<int>(n)));
             }
             else {
                 throw std::logic_error("Invalid type");
@@ -205,18 +235,19 @@ namespace CEGO {
                 double n = static_cast<double>(val);
                 
                 // Input value is in range
-                if (n >= m_lower.u.d && n <= m_upper.u.d) { return n; }
+                double upperval = static_cast<double>(m_upper.u()), lowerval = static_cast<double>(m_lower.u());
+                if (n >= lowerval && n <= upperval) { return n; }
                 else{
-                    double exc_upper = n - m_upper.u.d,  ///< Excursion above the upper bound
-                           exc_lower = m_lower.u.d - n,  ///< Excursion below the lower bound
-                           width = m_upper.u.d- m_lower.u.d; ///< Width of the range
+                    double exc_upper = n - upperval,  ///< Excursion above the upper bound
+                           exc_lower = lowerval - n,  ///< Excursion below the lower bound
+                           width = upperval- lowerval; ///< Width of the range
                     // Above the range, but reflection is possible
-                    if (n > m_upper.u.d && exc_upper <= width){
-                        return m_upper.u.d-exc_upper;
+                    if (n > upperval && exc_upper <= width){
+                        return upperval-exc_upper;
                     }
                     // Below the range, but reflection is possible
-                    else if (n < m_lower.u.d && exc_lower <= width){
-                        return m_lower.u.d + exc_lower;
+                    else if (n < lowerval && exc_lower <= width){
+                        return lowerval + exc_lower;
                     }
                     // Out of range and reflection not possible
                     else {
@@ -236,20 +267,21 @@ namespace CEGO {
                 }
 
                 // Input value is in range
-                if (i >= m_lower.u.i && i <= m_upper.u.i) { 
+                int lowerval = static_cast<int>(m_lower.u()), upperval = static_cast<int>(m_upper.u());
+                if (i >= lowerval && i <= upperval) { 
                     return i; 
                 }
                 else{
-                    int exc_upper = i - m_upper.u.i,  ///< Excursion above the upper bound
-                        exc_lower = m_lower.u.i - i,  ///< Excursion below the lower bound
-                        width = m_upper.u.i - m_lower.u.i; ///< Width of the range
+                    int exc_upper = i - upperval,  ///< Excursion above the upper bound
+                        exc_lower = lowerval - i,  ///< Excursion below the lower bound
+                        width = upperval - lowerval; ///< Width of the range
                     // Above the range, but reflection is possible
-                    if (i > m_upper.u.i && exc_upper <= width) {
-                        return m_upper.u.i - exc_upper;
+                    if (i > upperval && exc_upper <= width) {
+                        return upperval - exc_upper;
                     }
                     // Below the range, but reflection is possible
-                    else if (i < m_lower.u.i && exc_lower <= width) {
-                        return m_lower.u.i + exc_lower;
+                    else if (i < lowerval && exc_lower <= width) {
+                        return lowerval + exc_lower;
                     }
                     // Out of range and reflection not possible
                     else {

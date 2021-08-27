@@ -10,6 +10,9 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
+VERSION = '1.1.0'
+with open('src/CEGOversion.hpp','w') as fpver:
+    fpver.write(f'const std::string CEGOVERSION = "{VERSION}";')
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -60,7 +63,7 @@ class CMakeBuild(build_ext):
 
 setup(
     name='PyCEGO',
-    version='1.0.0',
+    version=VERSION,
     author='Ian Bell',
     author_email='ian.bell@nist.gov',
     description='C++->python wrapper of C++11 Evolutionary Global Optimization (CEGO)',

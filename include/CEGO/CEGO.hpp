@@ -180,6 +180,18 @@ namespace CEGO{
             };
         };
 
+        Layers(const std::function<double(const std::vector<T>&)> &function, std::size_t Nind_size, std::size_t Npop_size, std::size_t Nlayers, std::size_t age_gap = 5)
+            : Nind_size(Nind_size), Npop_size(Npop_size), Nlayers(Nlayers), age_gap(age_gap){
+
+            m_cost_function = [function](const CEGO::AbstractIndividual *pind) {
+                const EArray<T> &c = static_cast<const CEGO::NumericalIndividual<T>*>(pind)->get_coefficients();
+                std::vector<T> cvec(c.size());
+                // objective function wants std::vector, so we make a copy of the coefficients
+                for (auto i = 0; i < cvec.size(); ++i){ cvec[i] = c(i); }
+                return function(cvec);
+            };
+        };
+
         /// Constructor into which is passed a CostFunction and information about the layers
         Layers(CostFunction<T> &function, std::size_t Nind_size, std::size_t Npop_size, std::size_t Nlayers, std::size_t age_gap = 5) 
             : Nind_size(Nind_size), Npop_size(Npop_size), Nlayers(Nlayers), age_gap(age_gap), m_cost_function(function){ };
