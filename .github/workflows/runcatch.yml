@@ -21,7 +21,7 @@ jobs:
     - name: mkdir
       run: mkdir -p build
     - name: cmake config
-      run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCEGO_ALL=ON
+      run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCEGO_ALL=ON -DPYTHON_EXECUTABLE=${{env.pythonLocation}}/python
     - name: cmake make
       run: cd build && cmake --build . --config Release
     - name: run Catch tests
