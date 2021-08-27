@@ -15,10 +15,10 @@ jobs:
     - name: checkout submodules
       run: git submodule update --init --recursive
     - name: mkdir
-      run: mkdir -p CEGO/build && cd CEGO/build
+      run: mkdir -p build
     - name: cmake config
-      run: cd CEGO/build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCEGO_ALL=ON
+      run: cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCEGO_ALL=ON
     - name: cmake make
-      run: cmake --build CEGO/build --config Release
+      run: cd build && cmake --build build --config Release
     - name: run Catch tests
-      run: cd CEGO/build && ctest --verbose
+      run: cd build && ctest --verbose
