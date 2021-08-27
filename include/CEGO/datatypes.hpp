@@ -209,7 +209,7 @@ namespace CEGO {
         }
         template<typename URNG> numberish random_out_of_bounds(URNG &gen, const numberish &n) const {
             if (m_upper.type == numberish::types::DOUBLE) {
-                if (static_cast<double>(n) > m_lower.u().d && static_cast<double>(n) < m_upper.u().d){ return n; }
+                if (static_cast<double>(n) > m_lower.u() && static_cast<double>(n) < m_upper.u()){ return n; }
                 else{
                     double dbl; int integer;
                     gen_uniform(gen, dbl, integer);
@@ -217,7 +217,7 @@ namespace CEGO {
                 }
             }
             else if (m_upper.type == numberish::types::INT) {
-                if (static_cast<int>(n) > m_lower.u().i && static_cast<int>(n) < m_upper.u().i) { return n; }
+                if (static_cast<int>(n) > m_lower.u() && static_cast<int>(n) < m_upper.u()) { return n; }
                 else {
                     double dbl; int integer;
                     gen_uniform(gen, dbl, integer);
