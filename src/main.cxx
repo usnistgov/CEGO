@@ -269,7 +269,16 @@ void init_PyCEGO(py::module &m) {
 
     typedef CEGO::BuiltinEvolvers be;
     py::enum_< be >(m, "BuiltinEvolvers")
-        .value("differential_evolution", be::differential_evolution);
+        .value("differential_evolution", be::differential_evolution)
+        .value("differential_evolution_rand1bin", be::differential_evolution_rand1bin)
+        .value("differential_evolution_rand1exp", be::differential_evolution_rand1exp)
+        .value("differential_evolution_best1bin", be::differential_evolution_best1bin)
+        .value("differential_evolution_best1exp", be::differential_evolution_best1exp)
+        .value("differential_evolution_rand2bin", be::differential_evolution_rand2bin)
+        .value("differential_evolution_rand2exp", be::differential_evolution_rand2exp)
+        .value("differential_evolution_best2bin", be::differential_evolution_best2bin)
+        .value("differential_evolution_best2exp", be::differential_evolution_best2exp)
+        ; 
 
     typedef Layers<double> MyLayers;
     py::class_<MyLayers> layers(m, "DoubleLayers");
