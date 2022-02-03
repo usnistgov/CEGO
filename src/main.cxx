@@ -302,7 +302,7 @@ void init_PyCEGO(py::module &m) {
         f(x);
     });
 
-    m.def("LHS_samples", &LHS_samples);
+    m.def("LHS_samples", [](int Npop, int Nparam){std::mt19937 m_rng = get_Mersenne_twister(); return LHS_samples(Npop, Nparam, m_rng);} );
 
 }
 
