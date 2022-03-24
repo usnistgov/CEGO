@@ -287,6 +287,7 @@ void init_PyCEGO(py::module &m) {
     typedef Layers<CEGO::numberish> NumberishLayers;
     py::class_<NumberishLayers> numberish_layers(m, "NumberishLayers");
     upgrade_Layers(numberish_layers);
+    PYBIND11_NUMPY_DTYPE(CEGO::numberish, u_);
 
     m.def("indexer", [](std::function<CEGO::numberish(const RefEArray<CEGO::numberish> &)> &f){ 
         EArray<CEGO::numberish> a(10); a = 3.9; f(a); return;
