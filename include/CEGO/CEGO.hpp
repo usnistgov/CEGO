@@ -471,7 +471,7 @@ namespace CEGO{
                 this_layer_map["min(cost)"] = cost_layer.minCoeff();
                 this_layer_map["mean(cost)"] = cost_layer.mean();
                 // See https://en.wikipedia.org/wiki/Standard_deviation#Discrete_random_variable
-                this_layer_map["stddev(cost)"] = sqrt((cost_layer - cost_layer.mean()).square().sum()/cost_layer.size());
+                this_layer_map["stddev(cost)"] = sqrt((cost_layer - cost_layer.mean()).square().mean());
                 this_layer_map["mean(age)"] = age_layer.mean();
                 out.push_back(this_layer_map);
             }
