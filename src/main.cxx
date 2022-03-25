@@ -210,6 +210,7 @@ void upgrade_Layers(py::class_<CEGO::Layers<T>> &layers){
     layers.def("get_generation_mode", &MyLayers::get_generation_mode);
     layers.def("set_generation_mode", &MyLayers::set_generation_mode);
     layers.def("set_filtering_function", &MyLayers::set_filtering_function);
+    layers.def("cost_stats_each_layer", &MyLayers::cost_stats_each_layer);
     layers.def("set_builtin_evolver", &MyLayers::set_builtin_evolver);
     layers.def("get_evolver_flags", [](MyLayers &layers) { return layers.get_evolver_flags().dump(); });
     layers.def("set_evolver_flags", [](MyLayers &layers, const std::string &s) { return layers.set_evolver_flags(nlohmann::json::parse(s)); });
