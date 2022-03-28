@@ -229,6 +229,7 @@ void init_PyCEGO(py::module &m) {
         .def(py::init<const int &>())
         .def("as_double",&numberish::as_double)
         .def("as_int", &numberish::as_int)
+        .def("__float__", [](const numberish &n){ return n.as_double(); })
         
         .def(double() * py::self)
         .def(py::self * double())
