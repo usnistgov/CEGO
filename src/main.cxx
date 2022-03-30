@@ -191,15 +191,32 @@ int main(){
 
 namespace py = pybind11;
 
-template <typename T> using RefEArray = Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1, 0, Eigen::Dynamic, 1>>;
+/* Trampoline class; passes calls up into the derived class in python
+ * One overload is needed for each virtual function you want to be able to overload
+ */
+template<typename TYPE = double>
+class PyFuncWrapper : public CEGO::FuncWrapper<TYPE> {
+public:
+    /* Inherit the constructors */
+    using CEGO::FuncWrapper<TYPE>::FuncWrapper;
+
+    double call(const CEGO::CRefEArray<TYPE> & x) const override {
+        PYBIND11_OVERRIDE(
+            double,                   /* Return type */
+            CEGO::FuncWrapper<TYPE>,  /* Parent class */
+            call,                     /* Name of function in C++ (must match Python name) */
+            x                         /* Argument(s) */
+        );
+    }
+};
 
 template<class T >
 void upgrade_Layers(py::class_<CEGO::Layers<T>> &layers){
     using namespace CEGO;
     typedef Layers<T> MyLayers;
-      
 
-    layers.def(py::init<std::function<double(const std::vector<T> &)>&, int, int, int, int>());
+    layers.def(py::init<const FuncWrapper<T>&, int, int, int, int>());
+    layers.def(py::init<std::function<double(const CRefEArray<T> &)>, int, int, int, int>());
     layers.def("do_generation", &MyLayers::do_generation);
     layers.def("print_diagnostics", &MyLayers::print_diagnostics);
     layers.def("get_best", &MyLayers::get_best);
@@ -281,6 +298,14 @@ void init_PyCEGO(py::module &m) {
         .value("differential_evolution_best2bin", be::differential_evolution_best2bin)
         .value("differential_evolution_best2exp", be::differential_evolution_best2exp)
         ; 
+
+    py::class_<FuncWrapper<double>, PyFuncWrapper<double>> (m, "DoubleFuncWrapper")
+        .def(py::init<>())
+        ;
+
+    py::class_<FuncWrapper<CEGO::numberish>, PyFuncWrapper<CEGO::numberish>> (m, "NumberishFuncWrapper")
+        .def(py::init<>())
+        ;
 
     typedef Layers<double> MyLayers;
     py::class_<MyLayers> layers(m, "DoubleLayers");

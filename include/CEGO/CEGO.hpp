@@ -116,6 +116,19 @@ namespace CEGO{
         }
         return out;
     }
+
+    template <typename T> using CRefEArray = Eigen::Ref<const Eigen::ArrayX<T>>;
+    template <typename T> using RefEArray = Eigen::Ref<Eigen::ArrayX<T>>;
+
+    template<typename T>
+    class FuncWrapper{
+    public:
+        FuncWrapper(){};
+        virtual ~FuncWrapper() { }
+        virtual double call(const CRefEArray<T> & x) const{
+            return 0.0;
+        }
+    };
     
     enum class LoggingScheme { none = 0, all, custom };
     enum class FilterOptions { accept, reject };
@@ -164,6 +177,7 @@ namespace CEGO{
         DoubleCostFunction m_double_cost_function;
         DoubleGradientFunction m_double_gradient_function;
         std::size_t m_Nelite = 2;
+        FuncWrapper<T> funcwrapper;
     public:
         
         bool parallel = false;
@@ -195,6 +209,15 @@ namespace CEGO{
         /// Constructor into which is passed a CostFunction and information about the layers
         Layers(CostFunction<T> &function, std::size_t Nind_size, std::size_t Npop_size, std::size_t Nlayers, std::size_t age_gap = 5) 
             : Nind_size(Nind_size), Npop_size(Npop_size), Nlayers(Nlayers), age_gap(age_gap), m_cost_function(function){ };
+
+        Layers(const FuncWrapper<T> &funcwrappper, std::size_t Nind_size, std::size_t Npop_size, std::size_t Nlayers, std::size_t age_gap = 5)
+            : funcwrapper(funcwrapper), Nind_size(Nind_size), Npop_size(Npop_size), Nlayers(Nlayers), age_gap(age_gap){
+
+            m_cost_function = [&](const CEGO::AbstractIndividual *pind) {
+                auto c = CRefEArray<T>(static_cast<const CEGO::NumericalIndividual<T>*>(pind)->get_coefficients());
+                return funcwrapper.call(c);
+            };
+        };
 
         /// Add gradient function to the class, taking in doubles, returning double
         template <typename Function, typename Function2>
