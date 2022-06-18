@@ -10,7 +10,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
-VERSION = '1.2.1.dev0'
+VERSION = '1.2.1'
 with open('src/CEGOversion.hpp','w') as fpver:
     fpver.write(f'const std::string CEGOVERSION = "{VERSION}";')
 
