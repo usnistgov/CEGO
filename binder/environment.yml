@@ -1,7 +1,7 @@
 # This .yml file is used to specify the conda environment that should be loaded into the binder instance
 name: CEGO
 dependencies:
-  - python=3.9
+  - python=3.13
   - matplotlib
   - scipy
   - numpy
