@@ -81,6 +81,7 @@ if (NOT CEGO_NO_PYTHON)
   pybind11_add_module(PyCEGO "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cxx")
   target_compile_definitions(PyCEGO PUBLIC -DPYBIND11)
   attach_includes(PyCEGO)
+  install(TARGETS PyCEGO LIBRARY DESTINATION PyCEGO)
 endif()
 
 if (CEGO_ALL)
