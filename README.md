@@ -1,5 +1,7 @@
 # CEGO
 
+[![PyPI version](https://badge.fury.io/py/pycego.svg)](https://badge.fury.io/py/pycego)
+
 CEGO (pronounced *sea-go*) is C++11 Evolutionary Global Optimization.  This library is used to:
 
 * Solve unconstrained global optimization problems (Soft bound constraints can be added to the objective function as needed)
